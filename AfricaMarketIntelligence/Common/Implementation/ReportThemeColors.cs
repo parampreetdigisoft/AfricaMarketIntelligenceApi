@@ -2,7 +2,7 @@ using SkiaSharp;
 
 namespace AfricaMarketIntelligence.Common.Implementation
 {
-    /// <summary>Brand palette aligned with the AHI web application CSS variables.</summary>
+    /// <summary>Brand palette aligned with the AMI web application CSS variables.</summary>
     internal static class ReportThemeColors
     {
         public const string Primary = "#006D77";

@@ -78,7 +78,7 @@ namespace AfricaMarketIntelligence.Services
                 if (resutl == null || resutl.Success != true)
                 {
                     return ResultResponseDto<ChatResponseDto>.Failure(
-                        new[] { resutl?.Message ?? "Failed to query request from AHI Aevum." }
+                        new[] { resutl?.Message ?? "Failed to query request from AMI Aevum." }
                     );
                 }
 
@@ -114,7 +114,7 @@ namespace AfricaMarketIntelligence.Services
                 if (resutl == null || resutl.Success != true)
                 {
                     return ResultResponseDto<ChatResponseDto>.Failure(
-                        new[] { resutl?.Message ?? "Failed to query request from AHI Aevum." }
+                        new[] { resutl?.Message ?? "Failed to query request from AMI Aevum." }
                     );
                 }
 
@@ -164,7 +164,7 @@ namespace AfricaMarketIntelligence.Services
                 if (resutl == null || resutl.Success != true)
                 {
                     return ResultResponseDto<ChatResponseDto>.Failure(
-                        new[] { resutl?.Message ?? "Failed to query request from AHI Aevum." }
+                        new[] { resutl?.Message ?? "Failed to query request from AMI Aevum." }
                     );
                 }
 
@@ -272,7 +272,7 @@ namespace AfricaMarketIntelligence.Services
                         new[]
                         {
                             result?.Message ??
-                            "Failed to fetch Country executive slides from AHI Aevum."
+                            "Failed to fetch Country executive slides from AMI Aevum."
                         }
                     );
                 }

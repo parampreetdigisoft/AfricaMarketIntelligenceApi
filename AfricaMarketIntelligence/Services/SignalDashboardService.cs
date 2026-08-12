@@ -12,7 +12,7 @@ namespace AfricaMarketIntelligence.Services
 {
     public class SignalDashboardService : ISignalDashboardService
     {
-        private const int MarketStressTestModeId = 1;
+        private const int HealthStressTestModeId = 1;
         private const int EarlyWarningModeId = 2;
         private const int ResilienceModeId = 3;
 
@@ -28,7 +28,7 @@ namespace AfricaMarketIntelligence.Services
         }
 
         public Task<ResultResponseDto<DashboardModeResponseDto>> GetPeaceStressTestDashboard(int countryID, int userId, UserRole userRole)
-            => GetDashboardMode(MarketStressTestModeId, countryID, userId, userRole, "Market stress test dashboard generated successfully.");
+            => GetDashboardMode(HealthStressTestModeId, countryID, userId, userRole, "Market stress test dashboard generated successfully.");
 
         public Task<ResultResponseDto<DashboardModeResponseDto>> GetEarlyWarningDashboard(int countryID, int userId, UserRole userRole)
             => GetDashboardMode(EarlyWarningModeId, countryID, userId, userRole, "Early warning dashboard generated successfully.");

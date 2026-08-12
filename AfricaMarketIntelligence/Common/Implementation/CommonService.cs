@@ -1,4 +1,5 @@
 using AfricaMarketIntelligence.Common.Interface;
+using AfricaMarketIntelligence.Common.Models;
 using AfricaMarketIntelligence.Common.Models.settings;
 using AfricaMarketIntelligence.Common.Models.views;
 using AfricaMarketIntelligence.Data;
@@ -41,7 +42,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
 
         public static string CountryScoreSummery(decimal? progress,string? countryName = "The country", int pillarCount = 23, int kpiCount = 37)
         {
-            var evidenceSummaryStaringLine = $"{countryName ?? "The country"} records an overall AHI score of {progress ?? 0}, reflecting performance across {pillarCount} domains and {kpiCount} KPIs.";
+            var evidenceSummaryStaringLine = $"{countryName ?? "The country"} records an overall AMI score of {progress ?? 0}, reflecting performance across {pillarCount} domains and {kpiCount} KPIs.";
 
             return evidenceSummaryStaringLine;
         }
@@ -54,7 +55,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
         {
             immediateSituationSummary = immediateSituationSummary ?? "";
 
-            var evidenceSummaryStaringLine= $"{countryName ?? "The country"} records an overall AHI score of {progress ?? 0}, reflecting performance across {pillarCount} domains and {kpiCount} KPIs.";
+            var evidenceSummaryStaringLine= $"{countryName ?? "The country"} records an overall AMI score of {progress ?? 0}, reflecting performance across {pillarCount} domains and {kpiCount} KPIs.";
 
             return immediateSituationSummary + "\n\n " + evidenceSummaryStaringLine + " " + evidenceSummary;
         }
@@ -206,6 +207,50 @@ namespace AfricaMarketIntelligence.Common.Implementation
             {
                 await _appLogger.LogAsync("Error in Executing usp_getDashboardModeResult", ex);
                 return new List<GetDashboardModeResult>();
+            }
+        }
+
+        public async Task<ResultResponseDto<bool>> RevokeCountriesPermission(List<int> countryIds,int userID, int year)
+        {
+            try
+            {
+                var date = DateTime.UtcNow;
+                year = year == 0 ? date.Year : year;
+                var permissionList = await _context.AIEditPermissions.Where(x => countryIds.Contains(x.CountryID) && x.Year == year).ToListAsync();
+                if (permissionList == null || permissionList.Count==0)
+                    return ResultResponseDto<bool>.Failure(new[] { "Permission not found." });
+
+                foreach(var permission in permissionList)
+                {
+                    permission.Status = permission.Status == AIEditPermissionStatus.PendingRequest
+                    ? AIEditPermissionStatus.Rejected
+                    : AIEditPermissionStatus.Revoked;
+                    permission.GrantedBy = userID;
+                    permission.GrantedAt = date;
+                    
+                }
+
+                var sessionIds = permissionList.Where(x => x.ActiveSessionID.HasValue).Select(x => x.ActiveSessionID);
+                var sessionList = await _context.AIEditSessions.Where(x => sessionIds.Contains(x.SessionID)).ToListAsync();
+
+                foreach (var session in sessionList)
+                {
+                    if (session != null && session.Status == AIEditSessionStatus.Draft)
+                    {
+                        session.Status = AIEditSessionStatus.Cancelled;
+                        session.ReviewedBy = userID;
+                        session.ReviewedAt = date;
+                        session.ReviewComment = "Permission revoked by admin.";
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return ResultResponseDto<bool>.Success(true, new[] { "Permission revoked." });
+            }
+            catch (Exception ex)
+            {
+                await _appLogger.LogAsync("Error in RevokePermission", ex);
+                return ResultResponseDto<bool>.Failure(new[] { "Failed to revoke permission." });
             }
         }
     }

@@ -337,6 +337,11 @@ namespace AfricaMarketIntelligence.Controllers
                 
                 if (countryDetails.Count > 0)
                 {
+                    if(request.CountryIDs?.Count > 0)
+                    {
+                        countryDetails = countryDetails.Where(x => request.CountryIDs.Contains(x.CountryID)).ToList();
+                    }
+
                     string fileName;
                     string contentType;
                     var pdfBytes = await _aIComputationService.GenerateAllCountryDetailsReport(countryDetails, userRole, userId.GetValueOrDefault(), year, request.Format);
@@ -514,66 +519,6 @@ namespace AfricaMarketIntelligence.Controllers
             var result = await _aIComputationService.DownloadDocument(Id, userId.GetValueOrDefault(), userRole);
 
             return result;
-        }
-
-        [HttpPost("updateAICountryScore")]
-        [Authorize(Roles = "Admin,Analyst")]
-        public async Task<IActionResult> UpdateAICountryScore([FromBody] UpdateAICountryScoreDto request)
-        {
-            var userId = GetUserIdFromClaims();
-            if (userId == null)
-                return Unauthorized("User ID not found in token.");
-
-            var role = GetRoleFromClaims();
-            if (role == null || !Enum.TryParse<UserRole>(role, true, out var userRole))
-                return Unauthorized("You Don't have access.");
-
-            return Ok(await _aIComputationService.UpdateAICountryScore(request, userId.Value, userRole));
-        }
-
-        [HttpPost("updateAIPillarScore")]
-        [Authorize(Roles = "Admin,Analyst")]
-        public async Task<IActionResult> UpdateAIPillarScore([FromBody] UpdateAIPillarScoreDto request)
-        {
-            var userId = GetUserIdFromClaims();
-            if (userId == null)
-                return Unauthorized("User ID not found in token.");
-
-            var role = GetRoleFromClaims();
-            if (role == null || !Enum.TryParse<UserRole>(role, true, out var userRole))
-                return Unauthorized("You Don't have access.");
-
-            return Ok(await _aIComputationService.UpdateAIPillarScore(request, userId.Value, userRole));
-        }
-
-        [HttpPost("updateAIDataSourceCitation")]
-        [Authorize(Roles = "Admin,Analyst")]
-        public async Task<IActionResult> UpdateAIDataSourceCitation([FromBody] UpdateAIDataSourceCitationDto request)
-        {
-            var userId = GetUserIdFromClaims();
-            if (userId == null)
-                return Unauthorized("User ID not found in token.");
-
-            var role = GetRoleFromClaims();
-            if (role == null || !Enum.TryParse<UserRole>(role, true, out var userRole))
-                return Unauthorized("You Don't have access.");
-
-            return Ok(await _aIComputationService.UpdateAIDataSourceCitation(request, userId.Value, userRole));
-        }
-
-        [HttpPost("updateAIEstimatedQuestionScore")]
-        [Authorize(Roles = "Admin,Analyst")]
-        public async Task<IActionResult> UpdateAIEstimatedQuestionScore([FromBody] UpdateAIEstimatedQuestionScoreDto request)
-        {
-            var userId = GetUserIdFromClaims();
-            if (userId == null)
-                return Unauthorized("User ID not found in token.");
-
-            var role = GetRoleFromClaims();
-            if (role == null || !Enum.TryParse<UserRole>(role, true, out var userRole))
-                return Unauthorized("You Don't have access.");
-
-            return Ok(await _aIComputationService.UpdateAIEstimatedQuestionScore(request, userId.Value, userRole));
-        }
+        }        
     }
 }

@@ -111,7 +111,7 @@ namespace AfricaMarketIntelligence.Services
                         Title = sub,
                         ApiUrl = _appSettings.ApiUrl,
                         ApplicationUrl = url,
-                        MsgText= "A request was made to update the password for your Africa Market Intelligence (AHI) account. To proceed, please use the secure link below:",
+                        MsgText= "A request was made to update the password for your Africa Market Intelligence (AMI) account. To proceed, please use the secure link below:",
                         IsShowBtnText=true,
                         IsLoginBtn=false,
                         BtnText= "Update Password",
@@ -529,15 +529,15 @@ namespace AfricaMarketIntelligence.Services
                 {
                     isMailSent = true;
                     var addedNames = string.Join(", ", countryDetails.Where(c => countriesToAdd.Contains(c.CountryID)).Select(c => c.CountryName));
-                    msgText = $"You are receiving this email because {invitedUser?.FullName} recently requested country assignment ({addedNames}) for your AHI account.";
+                    msgText = $"You are receiving this email because {invitedUser?.FullName} recently requested country assignment ({addedNames}) for your AMI account.";
                 }
 
                 if (countriesToDelete.Count > 0)
                 {
                     var removedNames = string.Join(", ", countryDetails.Where(c => countriesToDelete.Contains(c.CountryID)).Select(c => c.CountryName));
                     msgText = isMailSent
-                        ? msgText + $" Additionally, you no longer have access to the countries ({removedNames}) for your AHI account."
-                        : $"You are receiving this email because {invitedUser?.FullName} recently removed your access to the following countries ({removedNames}) for your AHI account.";
+                        ? msgText + $" Additionally, you no longer have access to the countries ({removedNames}) for your AMI account."
+                        : $"You are receiving this email because {invitedUser?.FullName} recently removed your access to the following countries ({removedNames}) for your AMI account.";
                     isMailSent = true;
                 }
 
@@ -1087,7 +1087,7 @@ namespace AfricaMarketIntelligence.Services
                     IsLoginBtn = false,
                     IsShowBtnText = false,
                     Mail = _appSettings.AdminMail,
-                    DescriptionAboutBtnText = "You are receiving this email because a login attempt was made to your AHI account. " +
+                    DescriptionAboutBtnText = "You are receiving this email because a login attempt was made to your AMI account. " +
                                "If this was you, please use the above OTP to complete your sign-in. " +
                                "If you did not request this login, please secure your account immediately by resetting your password."
                 };
@@ -1209,7 +1209,7 @@ namespace AfricaMarketIntelligence.Services
                         Title = "Verify Your Email",
                         ApiUrl = _appSettings.ApiUrl,
                         ApplicationUrl = _appSettings.PublicApplicationUrl,
-                        MsgText = "A request was made to update the Email for your Africa Market Intelligence (AHI) account. Please verify your email or reset your password.",
+                        MsgText = "A request was made to update the Email for your Africa Market Intelligence (AMI) account. Please verify your email or reset your password.",
                         Mail = _appSettings.AdminMail,
                         BtnText = "Verify",
                         DescriptionAboutBtnText = "Please verify your email address by clicking the button above."

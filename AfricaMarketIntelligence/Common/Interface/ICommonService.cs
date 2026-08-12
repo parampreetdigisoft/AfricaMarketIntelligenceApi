@@ -1,3 +1,4 @@
+using AfricaMarketIntelligence.Common.Models;
 using AfricaMarketIntelligence.Common.Models.views;
 using AfricaMarketIntelligence.Dtos.CountryDto;
 using AfricaMarketIntelligence.Dtos.PillarDto;
@@ -14,5 +15,6 @@ namespace AfricaMarketIntelligence.Common.Interface
         Task<List<GetPillarDto>> GetPillars();
         void ClearPillarCache();
         Task<List<GetDashboardModeResult>> GetDashboardModeResults(int userId, int role, int dashboardModeID, int countryID = 0);
+        Task<ResultResponseDto<bool>> RevokeCountriesPermission(List<int> countryIds, int userID, int year);
     }
 }
