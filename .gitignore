@@ -14,4 +14,5 @@ obj/
 .idea/
 
 # Ignore local secrets (optional)
-appsettings.Development.json
+appsettings.json
+appsettings.*.json
