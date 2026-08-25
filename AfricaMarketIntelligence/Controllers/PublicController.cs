@@ -23,19 +23,10 @@ namespace AfricaMarketIntelligence.Controllers
             return Ok(response);
         }
 
-        [HttpGet("GetPartnerCountriesFilterRecord")]
-        public async Task<IActionResult> GetPartnerCountriesFilterRecord() => Ok(await _publicService.GetPartnerCountriesFilterRecord());
-
         [HttpGet]
         [Route("GetAllPillarAsync")]
         public async Task<IActionResult> GetAllPillarAsync() => Ok(await _publicService.GetAllPillarAsync());
 
-        [HttpGet("GetPartnerCountries")]
-        public async Task<IActionResult> GetPartnerCountries([FromQuery] PartnerCountryRequestDto r)
-        {
-            var response = await _publicService.GetPartnerCountries(r);
-            return Ok(response);
-        }
         [HttpGet("DownloadExecutiveSummeryPdf")]
         public IActionResult DownloadExecutiveSummeryPdf()
         {
@@ -90,13 +81,6 @@ namespace AfricaMarketIntelligence.Controllers
             return Ok(data);
         }
 
-        [HttpGet("getPillarsDmi")]
-        public async Task<IActionResult> GetPillarsDmi()
-        {
-            var data = await _publicService.GetPillarsDmi();
-            return Ok(data);
-        }
-
         [HttpGet("emergingTrendsAndIssues")]
         public async Task<IActionResult> GetEmergingTrendsAndIssues()
         {
@@ -109,11 +93,10 @@ namespace AfricaMarketIntelligence.Controllers
             return Ok(await _publicService.GetPillarLiveSignals());
         }
 
-        [HttpGet("getResilienceScorecard")]
-        public async Task<IActionResult> GetResilienceScorecard()
+        [HttpGet("overAllAfricaMarketScore")]
+        public async Task<IActionResult> GetOverAllAfricaMarketScore()
         {
-            var result = await _publicService.GetResilienceScorecard();
-            return Ok(result);
+            return Ok(await _publicService.GetOverAllAfricaMarketScore());
         }
     }
 }

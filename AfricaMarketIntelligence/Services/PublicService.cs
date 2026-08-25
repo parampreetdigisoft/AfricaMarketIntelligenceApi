@@ -1,9 +1,7 @@
-using AfricaMarketIntelligence.Common.Implementation;
 using AfricaMarketIntelligence.Common.Interface;
 using AfricaMarketIntelligence.Common.Models;
 using AfricaMarketIntelligence.Data;
 using AfricaMarketIntelligence.Dtos.chatDto;
-using AfricaMarketIntelligence.Dtos.CommonDto;
 using AfricaMarketIntelligence.Dtos.PublicDto;
 using AfricaMarketIntelligence.IServices;
 using Microsoft.AspNetCore.Authorization;
@@ -62,50 +60,6 @@ namespace AfricaMarketIntelligence.Services
                 return ResultResponseDto<List<PartnerCountryResponseDto>>.Failure(new string[] { "There is an error please try later" });
             }
         }
-        public async Task<ResultResponseDto<PartnerCountryFilterResponse>> GetPartnerCountriesFilterRecord()
-        {
-            try
-            {
-                // Fetch all active Countries once
-                var activeCountries = await _context.Countries
-                    .Where(x => !x.IsDeleted)
-                    .ToListAsync();
-
-                var res = new PartnerCountryFilterResponse
-                {
-                    Countries = activeCountries.Select(x=>x.CountryName)
-                        .Distinct()
-                        .ToList(),
-
-                    //Countries = activeCountries
-                    //    .Select(x => new PartnerCountryDto
-                    //    {
-                    //        CountryID = x.CountryID,
-                    //        CountryName = x.CountryName
-                    //    })
-                    //    .ToList(),
-
-                    Regions = activeCountries
-                        .Select(x => x.Region)
-                        .Where(r => !string.IsNullOrEmpty(r))
-                        .Distinct()
-                        .ToList()
-                };
-
-                return ResultResponseDto<PartnerCountryFilterResponse>.Success(
-                    res,
-                    new List<string> { "Get Countries history successfully" }
-                );
-            }
-            catch (Exception ex)
-            {
-                await _appLogger.LogAsync("Error Occured in GetPartnerCountriesFilterRecord", ex);
-                return ResultResponseDto<PartnerCountryFilterResponse>.Failure(
-                    new string[] { "Failed to get Partner country filter data" }
-                );
-            }
-        }
-
         public async Task<ResultResponseDto<List<PillarResponseDto>>> GetAllPillarAsync()
         {
             try
@@ -128,76 +82,6 @@ namespace AfricaMarketIntelligence.Services
                 return ResultResponseDto<List<PillarResponseDto>>.Failure(new string[] { "Failed to get Piilar detail" });
             }
         }
-        public async Task<PaginationResponse<PartnerCountryResponseDto>> GetPartnerCountries(PartnerCountryRequestDto request)
-        {
-            try
-            {
-                var year = DateTime.Now.Year;
-
-
-                var cityQuery =
-                   from c in _context.Countries.Where(x => !request.CountryID.HasValue || x.CountryID == request.CountryID)
-                   join uc in _context.UserCountryMappings on c.CountryID equals uc.CountryID into ucg
-                   from uc in ucg.DefaultIfEmpty()
-                   join a in _context.Assessments on uc.UserCountryMappingID equals a.UserCountryMappingID into ag
-                   from a in ag.DefaultIfEmpty()
-                   join pa in _context.PillarAssessments.Where(x=> !request.PillarID.HasValue || x.PillarID == request.PillarID) 
-                   on a.AssessmentID equals pa.AssessmentID into pag
-                   from pa in pag.DefaultIfEmpty()
-                   join r in _context.AssessmentResponses on pa.PillarAssessmentID equals r.PillarAssessmentID into rg
-                   from r in rg.DefaultIfEmpty()
-                   where !c.IsDeleted && 
-                    (uc == null || !uc.IsDeleted) &&
-                    (a == null || a.UpdatedAt.Year == year) 
-                   group r by new
-                   {
-                       c.CountryID,                       
-                       c.CountryCode,
-                       c.Image,
-                       c.Continent,
-                       c.CountryName,
-                       c.Region,
-                       EvaluatorCount = _context.UserCountryMappings
-                                           .Count(x => x.CountryID == c.CountryID && !x.IsDeleted)
-                   }
-                   into g
-                   select new PartnerCountryResponseDto
-                   {
-                       CountryID = g.Key.CountryID,
-                       Continent = g.Key.Continent,
-                       CountryName = g.Key.CountryName,
-                       CountryCode = g.Key.CountryCode,
-                       Region = g.Key.Region,                       
-                       Image = g.Key.Image,
-                       Score = (decimal)g.Sum(x => (int?)x.Score ?? 0) / (g.Key.EvaluatorCount == 0 ? 1 : g.Key.EvaluatorCount),
-                       HighScore = g.Max(x=>(int?)x.Score ?? 0),
-                       LowerScore = g.Min(x => (int?)x.Score ?? 0),
-                       Progress = ((decimal)g.Sum(x => (int?)x.Score ?? 0)) / ((g.Key.EvaluatorCount == 0 ? 1 : g.Key.EvaluatorCount) * g.Count()),
-                   };
-
-                if (!string.IsNullOrWhiteSpace(request.Country))
-                {
-                    cityQuery = cityQuery.Where(c => c.CountryName.Contains(request.Country));
-                }
-
-                // Only filter by Region if a value is provided
-                if (!string.IsNullOrWhiteSpace(request.Region))
-                {
-                    cityQuery = cityQuery.Where(c => c.Region != null && c.Region.Contains(request.Region));
-                }
-
-                var response = await cityQuery.ApplyPaginationAsync(request);
-
-                return response;
-
-            }
-            catch (Exception ex)
-            {
-                await _appLogger.LogAsync("Error Occure in GetCountriesProgressByUserId", ex);
-                return new();
-            }
-        }
-
         public async Task<CountryCityResponse> GetCountriesAndCountries_WithStaleSupport()
         {
             try
@@ -351,87 +235,6 @@ namespace AfricaMarketIntelligence.Services
 
                 return ResultResponseDto<List<PromotedPillarsResponseDto>>.Failure(
                     new[] { "Failed to get promoted Countries" });
-            }
-        }
-
-        public async Task<ResultResponseDto<List<PillarDmiResultDto>>> GetPillarsDmi()
-        {
-            const string cacheKey = "GetPillarsDmi";
-
-            try
-            {
-                // ? Try get from cache
-                if (_cache.TryGetValue(cacheKey, out List<PillarDmiResultDto> cachedData))
-                {
-                    return ResultResponseDto<List<PillarDmiResultDto>>.Success(
-                        cachedData,
-                        new List<string> { "Pillars Dmi fetched successfully" }
-                    );
-                }
-
-                int currentYear = DateTime.Now.Year;
-
-                var data = await _context.AiPillarStatsLast4MonthsView
-                     .AsNoTracking()
-                     .ToListAsync();
-
-                var pillars = (await _commonService.GetPillars()).ToDictionary(x => x.PillarID);
-
-                var result = data
-                    .GroupBy(x => new { x.PillarID })
-                    .Select(g =>
-                    {
-                        var pillar = pillars.GetValueOrDefault(g.Key.PillarID);
-
-                        var ordered = g.OrderByDescending(x => x.MonthNo).ToList();
-
-                        var m = ordered.Select(g => g.MonthNo).Distinct().ToList();
-
-                        decimal p_t = m.Count > 0 ? ordered.Where(x=>x.MonthNo == m.ElementAtOrDefault(0)).Average(x=>x.ScoreProgress) : 0m;
-                        decimal p_t1 = m.Count > 1 ? ordered.Where(x => x.MonthNo == m.ElementAtOrDefault(1)).Average(x => x.ScoreProgress) : 0m;
-                        decimal p_t2 = m.Count > 2 ? ordered.Where(x => x.MonthNo == m.ElementAtOrDefault(2)).Average(x => x.ScoreProgress) : 0m;
-                        decimal p_t3 = m.Count > 3 ? ordered.Where(x => x.MonthNo == m.ElementAtOrDefault(3)).Average(x => x.ScoreProgress) : 0m;
-
-
-                        decimal dmi =
-                        (
-                            (0.5m * (p_t - p_t1)) +
-                            (0.3m * (p_t1 - p_t2)) +
-                            (0.2m * (p_t2 - p_t3))
-                        ) / 20m;
-
-                        dmi = Math.Max(-1m, Math.Min(1m, dmi));
-
-                        return new PillarDmiResultDto
-                        {
-                            PillarID = g.Key.PillarID,
-                            PillarName = pillar?.PillarName ?? "",
-                            DisplayOrder = pillar?.DisplayOrder ?? 0,
-                            Angle = dmi * 180,
-                            PEMDM_t = dmi
-                        };
-                    })
-                    .OrderBy(x => x.PillarID)
-                    .ToList();
-
-                _cache.Set(cacheKey, result, new MemoryCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
-                    SlidingExpiration = TimeSpan.FromMinutes(5),
-                    Priority = CacheItemPriority.High
-                });
-
-                return ResultResponseDto<List<PillarDmiResultDto>>.Success(
-                    result,
-                    new List<string> { "Pillars Dmi fetched successfully" }
-                );
-            }
-            catch (Exception ex)
-            {
-                await _appLogger.LogAsync("Error Occurred in GetPillarsDmi", ex);
-                return ResultResponseDto<List<PillarDmiResultDto>>.Failure(
-                    new[] { "Failed to get promoted pillars" }
-                );
             }
         }
 
@@ -754,99 +557,68 @@ namespace AfricaMarketIntelligence.Services
             }
         }
 
-        public async Task<ResultResponseDto<ROSEWPublicDashboardDto>> GetResilienceScorecard()
+        public async Task<ResultResponseDto<OverallAfricaMarketResponse>> GetOverAllAfricaMarketScore()
         {
-            int dashboardModeId = 3;
-        
+            const string cacheKey = "OverAllAfricaMarketScore";
+
             try
             {
-                var dashboardMode = await _context.DashboardModes
+                if (_cache.TryGetValue(cacheKey, out OverallAfricaMarketResponse cachedResult))
+                {
+                    return ResultResponseDto<OverallAfricaMarketResponse>.Success(
+                        cachedResult,
+                        new List<string>
+                        {
+                            "Overall Africa market score fetched successfully from cache."
+                        }
+                    );
+                }
+
+                var year = DateTime.UtcNow.Year;
+
+                var result = await _context.AIPillarScores
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.DashboardModeID == dashboardModeId);
-
-                if (dashboardMode == null)
-                {
-                    return ResultResponseDto<ROSEWPublicDashboardDto>.Failure(new[] { "Dashboard configuration not found." });
-                }
-
-                var mappings = await _context.DashboardModeKPIMappings
-                .AsNoTracking()
-                .Where(x => x.DashboardModeID == dashboardModeId && x.IsActive && !x.IsDeleted)
-                .ToListAsync(); 
-
-                if (!mappings.Any())
-                {
-                    return ResultResponseDto<ROSEWPublicDashboardDto>.Failure(new[] { "Dashboard KPI mappings not found." });
-                }
-
-                var interpretations = await _context.DashboardInterpretations
-                    .AsNoTracking()
-                    .Where(x => x.DashboardModeID == dashboardModeId)
-                    .ToListAsync();
-
-                var spResults = await _commonService.GetDashboardModeResults(1, 1, dashboardModeId);
-                var spResultsByQuestion = spResults
-                    .Where(x => x.QuestionID.HasValue)
-                    .GroupBy(x => x.QuestionID!.Value)
-                    .ToDictionary(g => g.Key, g => g.Average(x => x.AiQuestionScore));
-
-
-                var questions = new List<ROSEWPublicQuestionDto>();
-
-                foreach (var mapping in mappings)
-                {
-                    spResultsByQuestion.TryGetValue(mapping.QuestionID, out var totalScore);
-                     var Score = (decimal)totalScore.GetValueOrDefault();
-                    var questionScore = new ROSEWPublicQuestionDto
+                    .Where(x => x.Country.IsActive && !x.Country.IsDeleted && x.Year == year)
+                    .GroupBy(x => 1)
+                    .Select(g => new OverallAfricaMarketResponse
                     {
-                        QuestionDescription = mapping.Description ?? "",
-                        Condition = interpretations.FirstOrDefault(i => i.MaxRange >= Score && i.MinRange <= Score)?.Condition ?? "Moderate Stress (Watch)"
-                    };
-                    questions.Add(questionScore);
-                }
+                        OverallScore = Math.Round(g.Average(x => x.AIProgress) ?? 0,2)
+                    })
+                    .FirstOrDefaultAsync() ?? new OverallAfricaMarketResponse();
 
-                var spResultsByCountry = spResults
-                    .Where(x => x.CountryID.HasValue)
-                    .GroupBy(x => x.CountryID!.Value)
-                        .ToDictionary(g => g.Key, g => g.Average(x => x.AiQuestionScore)).OrderByDescending(x=>x.Value).Take(3);
-
-
-                var dbCountries = _context.Countries.Where(x=> spResultsByCountry.Select(k=>k.Key).Contains(x.CountryID)).ToList();
-                var countries = new List<ROSEWPublicCountryDto>();
-
-                foreach (var country in spResultsByCountry)
-                {
-                    var Score = (decimal)country.Value.GetValueOrDefault();
-                    var countryScore = new ROSEWPublicCountryDto
+                _cache.Set(
+                    cacheKey,
+                    result,
+                    new MemoryCacheEntryOptions
                     {
-                        Country = dbCountries.FirstOrDefault(x=>x.CountryID == country.Key)?.CountryName ?? "",
-                        UpdatedAt = DateTime.UtcNow,
-                        Condition = interpretations.FirstOrDefault(i => i.MaxRange >= Score && i.MinRange <= Score)?.Condition ?? "Moderate Stress (Watch)"
-                    };
-                    countries.Add(countryScore);
-                }
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                        Priority = CacheItemPriority.High
+                    }
+                );
 
-
-                var overAllScore = spResultsByQuestion.Any() ? (decimal?)spResultsByQuestion?.Select(x => x.Value)?.Average() : 0m;
-
-                var response = new ROSEWPublicDashboardDto
-                {
-                    Score = Math.Round(overAllScore ?? 0m, 2),
-                    UpdatedAt = spResults.Max(x => x.AiUpdatedAt),
-                    OverallCondition = interpretations.FirstOrDefault(i => i.MaxRange >= (overAllScore ?? 0m) && i.MinRange <= (overAllScore ?? 0m))?.Condition ?? "Moderate Stress (Watch)",
-                    Countries = countries,
-                    Questions = questions
-
-                };
-
-                return ResultResponseDto<ROSEWPublicDashboardDto>.Success(response, new[] { "Response get successfully" });
+                return ResultResponseDto<OverallAfricaMarketResponse>.Success(
+                    result,
+                    new List<string>
+                    {
+                        "Overall Africa market score fetched successfully."
+                    }
+                );
             }
             catch (Exception ex)
             {
-                await _appLogger.LogAsync($"Error in GetDashboardMode for mode {dashboardModeId}", ex);
-                return ResultResponseDto<ROSEWPublicDashboardDto>.Failure(new[] { "There is an error, please try later" });
+                await _appLogger.LogAsync(
+                    "An error occurred while processing the GetOverAllAfricaMarketScore request.",
+                    ex
+                );
+
+                return ResultResponseDto<OverallAfricaMarketResponse>.Failure(
+                    new[]
+                    {
+                        "An error occurred while processing your request. Please try again later."
+                    }
+                );
             }
-        }       
+        }
     }
 }
 
