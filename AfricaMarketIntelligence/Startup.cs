@@ -60,12 +60,12 @@ namespace AfricaMarketIntelligence
                     builder.WithOrigins(
                         "http://localhost:4200",
                         "https://localhost:4200",
-                        "http://africahealthintelligence.ai",
-                        "https://africahealthintelligence.ai",
-                        "http://admin.africahealthintelligence.ai",
-                        "https://admin.africahealthintelligence.ai",
-                        "http://www.africahealthintelligence.ai",
-                        "https://www.africahealthintelligence.ai"
+                        "http://africamarketintelligence.ai",
+                        "https://africamarketintelligence.ai",
+                        "http://admin.africamarketintelligence.ai",
+                        "https://admin.africamarketintelligence.ai",
+                        "http://www.africamarketintelligence.ai",
+                        "https://www.africamarketintelligence.ai"
                         )
                         .AllowAnyHeader()
                         .AllowAnyMethod()
