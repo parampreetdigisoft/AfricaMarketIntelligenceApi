@@ -1,5 +1,4 @@
-using AfricaMarketIntelligence.Models;
-
+using AfricaMarketIntelligence.Dtos.CountryUserDto;
 namespace AfricaMarketIntelligence.Dtos.dashboard
 {
     public class DashboardModeResponseDto
@@ -8,8 +7,20 @@ namespace AfricaMarketIntelligence.Dtos.dashboard
         public int DashboardModeID { get; set; }
         public string ModeName { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public List<DashboardQuestionScoreDto> Questions { get; set; } = new();
-        public List<DashboardInterpretation> DashboardInterpretations { get; set; } = new();
+        public int Year { get; set; }
+        public decimal Ami { get; set; }
+        public decimal AICountryScore { get; set; }
+        public decimal ManualCountryScore { get; set; }
+        public decimal ManualValue { get; set; }
+        public decimal AmiDirectionalMovement { get; set; }
+        public string AmiCondition { get; set; } = string.Empty;
+        public string ManualCondition { get; set; } = string.Empty;
+        public string AmiDescriptor { get; set; } = string.Empty;
+        public string ManualDescriptor { get; set; } = string.Empty;
+        public string AmiStrategicAction { get; set; } = string.Empty;
+        public List<SignalCardDto> Signals { get; set; } = new();
+        public List<SignalCardDto> PrimarySignals { get; set; } = new();
+        public List<SignalCardDto> SecondarySignals { get; set; } = new();
     }
 
     public class DashboardQuestionScoreDto

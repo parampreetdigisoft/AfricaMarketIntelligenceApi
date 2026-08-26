@@ -66,35 +66,35 @@ namespace AfricaMarketIntelligence.Controllers
         }
 
         [HttpGet("getPeaceStressTestDashboard")]
-        public async Task<IActionResult> GetPeaceStressTestDashboard([FromQuery] int countryID)
+        public async Task<IActionResult> GetPeaceStressTestDashboard([FromQuery] int countryID, int year)
         {
             var (userId, userRole, error) = ValidateRequest();
             if (error != null)
                 return error;
 
-            var result = await _signalDashboardService.GetPeaceStressTestDashboard(countryID, userId!.Value, userRole);
+            var result = await _signalDashboardService.GetPeaceStressTestDashboard(countryID, userId!.Value, userRole, year);
             return Ok(result);
         }
 
         [HttpGet("getEarlyWarningDashboard")]
-        public async Task<IActionResult> GetEarlyWarningDashboard([FromQuery] int countryID)
+        public async Task<IActionResult> GetEarlyWarningDashboard([FromQuery] int countryID, int year)
         {
             var (userId, userRole, error) = ValidateRequest();
             if (error != null)
                 return error;
 
-            var result = await _signalDashboardService.GetEarlyWarningDashboard(countryID, userId!.Value, userRole);
+            var result = await _signalDashboardService.GetEarlyWarningDashboard(countryID, userId!.Value, userRole, year);
             return Ok(result);
         }
 
         [HttpGet("getResilienceScorecard")]
-        public async Task<IActionResult> GetResilienceScorecard([FromQuery] int countryID)
+        public async Task<IActionResult> GetResilienceScorecard([FromQuery] int countryID, int year)
         {
             var (userId, userRole, error) = ValidateRequest();
             if (error != null)
                 return error;
 
-            var result = await _signalDashboardService.GetResilienceScorecard(countryID, userId!.Value, userRole);
+            var result = await _signalDashboardService.GetResilienceScorecard(countryID, userId!.Value, userRole, year);
             return Ok(result);
         }        
     }

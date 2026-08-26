@@ -764,6 +764,7 @@ namespace AfricaMarketIntelligence.Services
                         .Count();
                 }
                 countryHistory.ActiveCountry = countryQuery.Where(x => x.HasMapping).Select(x => x.CountryID).Distinct().Count();
+                countryHistory.TotalAccessCountry = countryQuery.Where(x => x.HasMapping).Select(x => x.CountryID).Distinct().Count();
                 countryHistory.CompeleteCountry = countryQuery.Where(x => x.IsCompleted).Select(x => x.CountryID).Distinct().Count();
                 countryHistory.InprocessCountry = countryHistory.ActiveCountry - countryHistory.CompeleteCountry;
                 countryHistory.FinalizeCountry = aICountry.Where(x=>x.IsVerified).Count();
