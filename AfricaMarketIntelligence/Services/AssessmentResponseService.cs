@@ -115,7 +115,7 @@ namespace AfricaMarketIntelligence.Services
             {
                 var now = DateTime.Now;
                 var assessment = await _context.Assessments
-                    .Include(x=>x.UserCountryMapping)
+                    .Include(x => x.UserCountryMapping)
                     .Include(x => x.PillarAssessments)
                     .ThenInclude(x => x.Responses)
                     .FirstOrDefaultAsync(x =>
@@ -144,11 +144,6 @@ namespace AfricaMarketIntelligence.Services
                     _context.Assessments.Add(assessment);
                 }
 
-                if(assessment.AssessmentPhase==AssessmentPhase.Completed && request.PillarID != 22)
-                {
-                    return ResultResponseDto<string>.Failure(new[] { "Need approval to edit this pillar" });
-                }
-
                 if (request.PillarID > 0)
                 {
                     var pillarAssessment = assessment.PillarAssessments
@@ -166,9 +161,14 @@ namespace AfricaMarketIntelligence.Services
                     }
 
                     var existingResponses = pillarAssessment.Responses.ToList();
-                    
+
                     if (!request.IsAutoSave) // removed if entire assessement is update for all responses
                     {
+                        var lastPillar = (await _commonService.GetPillars())
+                            .OrderByDescending(x => x.DisplayOrder)
+                            .FirstOrDefault();
+                        assessment.AssessmentPhase = lastPillar?.PillarID == request.PillarID ? AssessmentPhase.Completed : AssessmentPhase.InProgress;
+
                         var requestResponseIds = request.Responses
                             .Where(r => r.QuestionID > 0)
                             .Select(r => r.QuestionID)
@@ -197,11 +197,10 @@ namespace AfricaMarketIntelligence.Services
                                 QuestionOptionID = response.QuestionOptionID,
                                 Justification = response.Justification,
                                 Source = response.Source,
-                                Score = response.Score,
-                                UpdatedAt = now
+                                Score = response.Score
                             });
                         }
-                        else if(existing !=null)
+                        else
                         {
                             // Update existing
                             existing.QuestionID = response.QuestionID;
@@ -209,7 +208,6 @@ namespace AfricaMarketIntelligence.Services
                             existing.Justification = response.Justification;
                             existing.Score = response.Score;
                             existing.Source = response.Source;
-                            existing.UpdatedAt = now;
                         }
                     }
                     if (request.IsFinalized)
@@ -227,7 +225,7 @@ namespace AfricaMarketIntelligence.Services
                     _download.InsertAnalyticalLayerResults(assessment.UserCountryMapping.CountryID);
                 }
 
-                return ResultResponseDto<string>.Success("", new[] { "Domain saved successfully" }, 1);
+                return ResultResponseDto<string>.Success("", new[] { "Pillar saved successfully" }, 1);
             }
             catch (Exception ex)
             {
@@ -235,6 +233,7 @@ namespace AfricaMarketIntelligence.Services
                 return ResultResponseDto<string>.Failure(new[] { "Failed to save assessment" });
             }
         }
+
 
         public async Task<PaginationResponse<GetCountryAssessmentResponseDto>> GetAssessmentResult(GetAssessmentRequestDto request, UserRole role)
         {
@@ -728,7 +727,7 @@ namespace AfricaMarketIntelligence.Services
             }
         }
 
-        public async Task<ResultResponseDto<GetAssessmentHistoryDto>> GetAssessmentProgressHistory(int assessmentID)
+        public async Task<ResultResponseDto<GetAssessmentHistoryDto>> GetAssessmentProgressHistory(GetProgramProgressHistoryRequestDto progressHistoryRequest)
         {
             try
             {
@@ -736,33 +735,45 @@ namespace AfricaMarketIntelligence.Services
                 var assessment = await _context.Assessments
                     .Include(a => a.PillarAssessments)
                         .ThenInclude(pa => pa.Responses)
-                    .FirstOrDefaultAsync(a => a.AssessmentID == assessmentID);
+                    .FirstOrDefaultAsync(a => a.AssessmentID == progressHistoryRequest.AssessmentID || a.UserCountryMappingID == progressHistoryRequest.UserCountryMappingID);
+
+                // Get total questions directly (avoid Include if not needed)
+                var totalQuestions = await _context.Questions.Where(x => !x.IsDeleted).CountAsync();
+                var totalPillars = (await _commonService.GetPillars()).Count;
 
                 if (assessment == null)
                 {
-                    return ResultResponseDto<GetAssessmentHistoryDto>.Failure(new[] { "Failed to get assessment history" });
+                    var emptyResult = new GetAssessmentHistoryDto
+                    {
+                        AssessmentID = progressHistoryRequest.AssessmentID,
+                        Score = 0,
+                        TotalPillar = totalPillars,
+                        TotalAnsPillar = 0,
+                        TotalAnsQuestion = 0,
+                        TotalQuestion = totalQuestions,
+                        CurrentProgress = 0
+                    };
+
+                    return ResultResponseDto<GetAssessmentHistoryDto>.Success(emptyResult, new[] { "No assessment found. Returning default progress." });
                 }
 
-                // Get total questions directly (avoid Include if not needed)
-                var totalQuestions = await _context.Questions.Where(x=>!x.IsDeleted).CountAsync();
 
                 // Calculate answered questions
                 var totalAnsweredQuestions = assessment.PillarAssessments
                     .SelectMany(pa => pa.Responses)
                     .Count();
 
-                // Calculate score (sum only valid scores <= Four)
+                // Calculate score (sum only valid scores <= Score1)
                 var score = assessment.PillarAssessments
                     .SelectMany(pa => pa.Responses)
                     .Where(r => r.Score.HasValue && r.Score.Value <= ScoreValue.Four)
                     .Sum(r => (int)r.Score!.Value);
 
-                var totalPillars = (await _commonService.GetPillars()).Count;
 
                 // Build response
                 var result = new GetAssessmentHistoryDto
                 {
-                    AssessmentID = assessmentID,
+                    AssessmentID = progressHistoryRequest.AssessmentID,
                     Score = score,
                     TotalPillar = totalPillars,
                     TotalAnsPillar = assessment.PillarAssessments.Count,

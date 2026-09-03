@@ -308,42 +308,41 @@ namespace AfricaMarketIntelligence.Services
                         .Include(x => x.PillarAssessments).ThenInclude(x => x.Responses)
                         .Where(a => a.UserCountryMappingID == request.UserCountryMappingID && a.UpdatedAt.Year == year && a.IsActive)
                         .FirstOrDefaultAsync();
+
+                    if (assessment != null && (assessment.AssessmentPhase == AssessmentPhase.Completed || assessment.AssessmentPhase == AssessmentPhase.EditRejected || assessment.AssessmentPhase == AssessmentPhase.EditRequested))
+                    {
+                        return ResultResponseDto<GetPillarQuestionByCountryResponse>.Failure(
+                            new[] { "You have submitted assessment for this country" });
+                    }
+
                     if (assessment != null)
                     {
                         answeredPillarIds = assessment.PillarAssessments
-                       .OrderByDescending(r => r.Responses
-                       .Select(resp => (DateTime?)resp.UpdatedAt).Max())
                        .Select(r => r.PillarID)
                        .ToList();
                     }
-                    int pillarCount = (await _commonService.GetPillars()).Count;
+                    var allPillars = await _commonService.GetPillars();
+                    var pillarCount = allPillars.Count;
+                    var lastDisplayOrder = allPillars.Count == 0 ? 0 : allPillars.Max(p => p.DisplayOrder);
+
                     if (assessment != null && answeredPillarIds.Count == pillarCount && !request.PillarID.HasValue)
                     {
                         request.PillarID = assessment.PillarAssessments.First().PillarID;
                     }
-                    if (assessment?.AssessmentPhase == AssessmentPhase.Completed)
-                    {
-                        request.PillarID = ROSEWPillarID;
-                    }
-                    else if (!request.PillarID.HasValue)
-                    {
-                        if (answeredPillarIds.Any())
-                        {
-                            request.PillarID = answeredPillarIds.First();
-                        }
-                        else
-                        {
-                            request.PillarID = (await _commonService.GetPillars()).FirstOrDefault()?.PillarID;
-                        }
-                    }
 
                     // Get next unanswered pillar
                     var selectPillar = await _context.Pillars
-                   .Where(x => x.IsActive && !x.IsDeleted && x.PillarID == request.PillarID)
-                   .Include(p => p.Questions.Where(x => !x.IsDeleted))
-                   .ThenInclude(q => q.QuestionOptions)
-                   .FirstOrDefaultAsync();
-                    
+                        .Include(p => p.Questions)
+                            .ThenInclude(q => q.QuestionOptions)
+                        .Where(p => !request.PillarID.HasValue ? !answeredPillarIds.Contains(p.PillarID) : p.PillarID == request.PillarID)
+                        .OrderBy(p => p.DisplayOrder)
+                        .FirstOrDefaultAsync();
+
+                    var summitedPillar = allPillars
+                        .Where(p => !answeredPillarIds.Contains(p.PillarID))
+                        .OrderBy(p => p.DisplayOrder)
+                        .FirstOrDefault();
+
                     if (selectPillar == null || selectPillar?.Questions == null)
                     {
                         return ResultResponseDto<GetPillarQuestionByCountryResponse>.Failure(new[] { "You have submitted assessment for this country" });
@@ -355,8 +354,11 @@ namespace AfricaMarketIntelligence.Services
                         editAssessmentResponse = assessment.PillarAssessments
                         .Where(a => a.PillarID == request.PillarID)
                         .SelectMany(x => x.Responses)
-                        .GroupBy(x=>x.QuestionID)
-                        .ToDictionary(x => x.Key , x=>x.First());
+                        .GroupBy(x => x.QuestionID)
+                            .ToDictionary(
+                                g => g.Key,
+                                g => g.Last()
+                            );
                     }
 
                     // Project questions
@@ -395,7 +397,7 @@ namespace AfricaMarketIntelligence.Services
                         PillarID = selectPillar.PillarID,
                         Description = selectPillar.Description,
                         DisplayOrder = selectPillar.DisplayOrder,
-                        SubmittedPillarDisplayOrder = selectPillar.DisplayOrder,
+                        SubmittedPillarDisplayOrder = answeredPillarIds.Count == pillarCount ? lastDisplayOrder : summitedPillar?.DisplayOrder ?? selectPillar.DisplayOrder,
                         Questions = questions
                     };
                     return ResultResponseDto<GetPillarQuestionByCountryResponse>.Success(result, new[] { "get questions successfully" });
@@ -409,6 +411,7 @@ namespace AfricaMarketIntelligence.Services
                 return ResultResponseDto<GetPillarQuestionByCountryResponse>.Failure(new string[] { "There is an error please try later" });
             }
         }
+
         public async Task<Tuple<string, byte[]>> ExportAssessment(int userCountryMappingID, int userId, UserRole role)
         {
             try
@@ -1044,75 +1047,79 @@ namespace AfricaMarketIntelligence.Services
             CountryPillerRequestDto request, int userId)
         {
             try
-            {                
-                var year = DateTime.Now.Year;
-
+            {
                 var userCountryMappings = await _context.UserCountryMappings
                     .FirstOrDefaultAsync(x => x.UserCountryMappingID == request.UserCountryMappingID
                                            && x.UserID == userId
                                            && !x.IsDeleted);
 
                 if (userCountryMappings == null)
-                    return ResultResponseDto<GetPillarQuestionByCountryResponse>.Failure(
-                        new[] { "Invalid request." });
+                    return null;
 
-                Expression<Func<Assessment, bool>> predicate = a =>
-                    a.UserCountryMappingID == request.UserCountryMappingID &&
-                    a.UpdatedAt.Year == year &&
-                    a.IsActive;
+                var year = DateTime.Now.Year;
 
+                // Load assessment with related data
                 var assessment = await _context.Assessments
                     .Include(x => x.PillarAssessments)
                         .ThenInclude(x => x.Responses)
-                    .FirstOrDefaultAsync(predicate);
+                    .Where(a => a.UserCountryMappingID == request.UserCountryMappingID
+                             && a.UpdatedAt.Year == year
+                             && a.IsActive)
+                    .FirstOrDefaultAsync();
 
-                var answeredPillarIds =
-                    assessment?.PillarAssessments
-                     .OrderByDescending(r => r.Responses
-                     .Select(resp => (DateTime?)resp.UpdatedAt).Max())
-                     .Select(r => r.PillarID)
-                     .ToList() ?? new List<int>();
-
-
-                int pillarCount = (await _commonService.GetPillars()).Count;
-
-                if(assessment?.AssessmentPhase == AssessmentPhase.Completed)
+                if (assessment != null && (assessment.AssessmentPhase == AssessmentPhase.Completed || assessment.AssessmentPhase == AssessmentPhase.EditRejected || assessment.AssessmentPhase == AssessmentPhase.EditRequested))
                 {
-                    request.PillarID = ROSEWPillarID;
+                    return ResultResponseDto<GetPillarQuestionByCountryResponse>.Failure(
+                        new[] { "You have submitted assessment for this country" });
                 }
-                else if (assessment != null && answeredPillarIds.Count == pillarCount && !request.PillarID.HasValue)
+
+                var answeredPillarIds = assessment?.PillarAssessments
+                    .Select(r => r.PillarID)
+                    .ToList() ?? new List<int>();
+
+                var allPillars = await _commonService.GetPillars();
+                var pillarCount = allPillars.Count;
+                var lastDisplayOrder = allPillars.Count == 0 ? 0 : allPillars.Max(p => p.DisplayOrder);
+
+                if (assessment != null && answeredPillarIds.Count == pillarCount && !request.PillarID.HasValue)
                     request.PillarID = assessment.PillarAssessments.First().PillarID;
-
-                if (!request.PillarID.HasValue)
-                {
-                    if (answeredPillarIds.Any())
-                    {
-                        request.PillarID = answeredPillarIds.First();
-                    }
-                    else
-                    {
-                        request.PillarID = (await _commonService.GetPillars()).FirstOrDefault()?.PillarID;
-                    }
-                }
 
                 // Get the target pillar (next unanswered or specific)
                 var selectPillar = await _context.Pillars
-                   .Where(x => x.IsActive && !x.IsDeleted && x.PillarID == request.PillarID)
-                   .Include(p => p.Questions.Where(x => !x.IsDeleted))
-                   .ThenInclude(q => q.QuestionOptions)
-                   .FirstOrDefaultAsync();
+                    .Include(p => p.Questions)
+                        .ThenInclude(q => q.QuestionOptions)
+                    .Where(p => !request.PillarID.HasValue
+                        ? !answeredPillarIds.Contains(p.PillarID)
+                        : p.PillarID == request.PillarID)
+                    .OrderBy(p => p.DisplayOrder)
+                    .FirstOrDefaultAsync();
 
-                if (selectPillar == null || !selectPillar.Questions.Any())
+                var nextUnansweredPillar = allPillars
+                    .Where(p => !answeredPillarIds.Contains(p.PillarID))
+                    .OrderBy(p => p.DisplayOrder)
+                    .FirstOrDefault();
+
+                if (selectPillar?.Questions == null)
                     return ResultResponseDto<GetPillarQuestionByCountryResponse>.Failure(
                         new[] { "You have submitted assessment for this country" });
-
-                // Build lookup for existing responses for the selected pillar
                 var editAssessmentResponse = assessment?.PillarAssessments
                     .Where(a => a.PillarID == request.PillarID)
                     .SelectMany(x => x.Responses)
                     .GroupBy(x => x.QuestionID)
-                    .ToDictionary(g => g.Key,g => g.OrderByDescending(x => x.UpdatedAt).First()) 
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Last()
+                    )
                     ?? new Dictionary<int, AssessmentResponse>();
+
+                // Build option text lookup for history display
+                var optionTextLookup = selectPillar.Questions
+                    .SelectMany(q => q.QuestionOptions)
+                    .GroupBy(x => x.OptionID)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Last()
+                    );
 
                 // Project questions with pre-filled answers
                 var questions = selectPillar.Questions
@@ -1236,7 +1243,10 @@ namespace AfricaMarketIntelligence.Services
                     PillarID = selectPillar.PillarID,
                     Description = selectPillar.Description,
                     DisplayOrder = selectPillar.DisplayOrder,
-                    SubmittedPillarDisplayOrder = selectPillar.DisplayOrder,
+                    SubmittedPillarDisplayOrder = answeredPillarIds.Count == pillarCount
+                                                   ? lastDisplayOrder
+                                                   : nextUnansweredPillar?.DisplayOrder ?? selectPillar.DisplayOrder,
+                    //LastPillarDisplayOrder= lastDisplayOrder,
                     Questions = questions
                 };
 

@@ -18,7 +18,7 @@ namespace AfricaMarketIntelligence.IServices
         Task<PaginationResponse<GetAssessmentQuestionResponseDto>> GetAssessmentQuestion(GetAssessmentQuestoinRequestDto request);
         Task<ResultResponseDto<string>> ImportAssessmentAsync(IFormFile file,int userID);
         Task<GetCountryQuestionHistoryResponseDto> GetCountryQuestionHistory(UserCountryRequestDto userCountryRequestDto);
-        Task<ResultResponseDto<GetAssessmentHistoryDto>> GetAssessmentProgressHistory(int assessmentID);
+        Task<ResultResponseDto<GetAssessmentHistoryDto>> GetAssessmentProgressHistory(GetProgramProgressHistoryRequestDto progressHistoryRequest);
         Task<ResultResponseDto<string>> ChangeAssessmentStatus(ChangeAssessmentStatusRequestDto r);
         Task<ResultResponseDto<string>> TransferAssessment(TransferAssessmentRequestDto r, int userID, UserRole userRole);
         Task<ResultResponseDto<AiCountryPillarDashboardResponseDto>> GetCountryPillarHistory(UserCountryDashBoardRequestDto userCountryRequestDto,int userID, UserRole userRole);

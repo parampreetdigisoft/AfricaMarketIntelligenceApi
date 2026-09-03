@@ -1,5 +1,6 @@
 using AfricaMarketIntelligence.Common.Interface;
 using AfricaMarketIntelligence.Common.Models.settings;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -9,22 +10,33 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
+using System.Net.Mime;
+using System.Text;
 
 namespace AfricaMarketIntelligence.Common.Implementation
 {
     public class EmailService : IEmailService
     {
+        public const string LogoContentId = "ami-logo";
+
         private readonly Mailsetting _smtpSettings;
         private readonly IRazorViewEngine _razorViewEngine;
         private readonly ITempDataProvider _tempDataProvider;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IWebHostEnvironment _env;
 
-        public EmailService(IOptions<Mailsetting> smtpSettings, ITempDataProvider tempDataProvider, IRazorViewEngine razorViewEngine, IServiceProvider serviceProvider)
+        public EmailService(
+            IOptions<Mailsetting> smtpSettings,
+            ITempDataProvider tempDataProvider,
+            IRazorViewEngine razorViewEngine,
+            IServiceProvider serviceProvider,
+            IWebHostEnvironment env)
         {
             _smtpSettings = smtpSettings.Value;
             _tempDataProvider = tempDataProvider;
             _razorViewEngine = razorViewEngine;
             _serviceProvider = serviceProvider;
+            _env = env;
         }
 
         public async Task<bool> SendEmailAsync(string toEmail, string subject, string viewNamePath, object model)
@@ -33,32 +45,54 @@ namespace AfricaMarketIntelligence.Common.Implementation
             {
                 using var client = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port)
                 {
-                    UseDefaultCredentials=false,
+                    UseDefaultCredentials = false,
                     Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password),
                     EnableSsl = _smtpSettings.EnableSsl,
                     DeliveryMethod = SmtpDeliveryMethod.Network,
-                    TargetName = "STARTTLS/"+ _smtpSettings.Host
+                    TargetName = "STARTTLS/" + _smtpSettings.Host
                 };
                 var htmlContent = await RenderRazorViewToStringAsync(viewNamePath, model);
-                var mailMessage = new MailMessage
+                using var mailMessage = new MailMessage
                 {
                     From = new MailAddress(_smtpSettings.SenderEmail, _smtpSettings.SenderName),
                     Subject = subject,
-                    Body = htmlContent,
                     IsBodyHtml = true
                 };
 
                 mailMessage.To.Add(toEmail);
 
+                var htmlView = AlternateView.CreateAlternateViewFromString(
+                    htmlContent,
+                    Encoding.UTF8,
+                    MediaTypeNames.Text.Html);
+
+                var webRoot = string.IsNullOrWhiteSpace(_env.WebRootPath)
+                    ? Path.Combine(_env.ContentRootPath, "wwwroot")
+                    : _env.WebRootPath;
+                var logoPath = Path.Combine(webRoot, "assets", "images", "Logo-market.png");
+
+                if (File.Exists(logoPath))
+                {
+                    var logo = new LinkedResource(logoPath, new ContentType("image/png"))
+                    {
+                        ContentId = LogoContentId,
+                        TransferEncoding = TransferEncoding.Base64
+                    };
+                    htmlView.LinkedResources.Add(logo);
+                }
+
+                mailMessage.AlternateViews.Add(htmlView);
+
                 await Task.Run(() => client.Send(mailMessage));
 
-                return true; 
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return false; 
+                return false;
             }
         }
+
         private async Task<string> RenderRazorViewToStringAsync(string viewName, object model)
         {
             var httpContext = new DefaultHttpContext();
@@ -80,7 +114,6 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 Model = model
             };
 
-
             using var stringWriter = new StringWriter();
             var viewContext = new ViewContext(
                 actionContext,
@@ -94,7 +127,5 @@ namespace AfricaMarketIntelligence.Common.Implementation
             await viewResult.View.RenderAsync(viewContext);
             return stringWriter.ToString();
         }
-
-
     }
 }

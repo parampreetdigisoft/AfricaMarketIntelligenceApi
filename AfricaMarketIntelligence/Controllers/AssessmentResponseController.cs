@@ -154,12 +154,13 @@ namespace AfricaMarketIntelligence.Controllers
             var result = await _responseService.GetCountryQuestionHistory(userCountryRequestDto);
             return Ok(result);
         }
+
         [HttpGet]
-        [Route("getAssessmentProgressHistory/{assessmentID}")]
+        [Route("getAssessmentProgressHistory")]
         [Authorize]
-        public async Task<IActionResult> getAssessmentProgressHistory(int assessmentID)
+        public async Task<IActionResult> getAssessmentProgressHistory([FromQuery] GetProgramProgressHistoryRequestDto progressHistoryRequest)
         {
-            var result = await _responseService.GetAssessmentProgressHistory(assessmentID);
+            var result = await _responseService.GetAssessmentProgressHistory(progressHistoryRequest);
             return Ok(result);
         }
 
