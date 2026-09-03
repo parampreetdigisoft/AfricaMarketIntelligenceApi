@@ -1762,7 +1762,7 @@ namespace AfricaMarketIntelligence.Services
 
                     if (!validCity)
                     {
-                        return ResultResponseDto<string>.Failure(new[] { "This assessment can't be imported because the selected user hasn�t been assigned to this country yet." });
+                        return ResultResponseDto<string>.Failure(new[] { "This assessment can't be imported because the selected user hasn't been assigned to this country yet." });
                     }
                 }
 
@@ -1781,7 +1781,7 @@ namespace AfricaMarketIntelligence.Services
                 var userCountryMapping = await _context.UserCountryMappings.FirstOrDefaultAsync(x => !x.IsDeleted && x.CountryID == r.CountryID && x.UserID == r.TransferToUserID);
 
                 if (userCountryMapping == null)
-                    return ResultResponseDto<string>.Failure(new[] { "This assessment can't be imported because the selected user hasn�t been assigned to this country yet." });
+                    return ResultResponseDto<string>.Failure(new[] { "This assessment can't be imported because the selected user hasn't been assigned to this country yet." });
 
 
                 // Load existing assessment for that user/country/year (with pillars/responses)

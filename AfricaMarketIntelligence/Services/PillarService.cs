@@ -3,14 +3,17 @@ using AfricaMarketIntelligence.Common.Models;
 using AfricaMarketIntelligence.Data;
 using AfricaMarketIntelligence.Dtos.AssessmentDto;
 using AfricaMarketIntelligence.Dtos.CommonDto;
+using AfricaMarketIntelligence.Dtos.kpiDto;
 using AfricaMarketIntelligence.Dtos.PillarDto;
 using AfricaMarketIntelligence.IServices;
 using AfricaMarketIntelligence.Models;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Text.Json;
 using QuestPDF.Fluent;
 using AfricaMarketIntelligence.Common.Interface;
+using AfricaMarketIntelligence.Common.Implementation;
 
 namespace AfricaMarketIntelligence.Services
 {
@@ -140,7 +143,7 @@ namespace AfricaMarketIntelligence.Services
                 _commonService.ClearPillarCache();
                 _context.Pillars.Add(newPillar);
                 await _context.SaveChangesAsync();
-                await SyncPillarKpiMappingsAsync(newPillar.PillarID, pillar.KpiLayerIds);
+                await SyncPillarKpiMappingsAsync(newPillar.PillarID, pillar.KpiUpdates);
                 await _context.SaveChangesAsync();
 
                 return ResultResponseDto<Pillar>.Success(newPillar, new[] { "Domain created successfully." });
@@ -194,7 +197,7 @@ namespace AfricaMarketIntelligence.Services
                     _download.InsertAnalyticalLayerResults();
                 }
                  _commonService.ClearPillarCache();
-                await SyncPillarKpiMappingsAsync(id, pillar.KpiLayerIds);
+                await SyncPillarKpiMappingsAsync(id, pillar.KpiUpdates);
                 await _context.SaveChangesAsync();
                 return existing;
             }
@@ -235,46 +238,50 @@ namespace AfricaMarketIntelligence.Services
             }
         }
 
-        private async Task SyncPillarKpiMappingsAsync(int pillarId, string? kpiLayerIds)
+        private async Task SyncPillarKpiMappingsAsync(int pillarId, string? kpiUpdatesJson = null)
         {
-            if (kpiLayerIds == null)
+            if (string.IsNullOrWhiteSpace(kpiUpdatesJson))
                 return;
 
-            var requestedLayerIds = kpiLayerIds
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(id => int.TryParse(id, out var layerId) ? layerId : 0)
-                .Where(id => id > 0)
-                .Distinct()
-                .ToList();
-
-            var validLayerIds = requestedLayerIds.Count == 0
-                ? new List<int>()
-                : await _context.AnalyticalLayers
-                    .Where(x => !x.IsDeleted && requestedLayerIds.Contains(x.LayerID))
-                    .Select(x => x.LayerID)
-                    .ToListAsync();
-
-            var existingMappings = await _context.AnalyticalLayerPillarMappings
-                .Where(x => x.PillarID == pillarId)
-                .ToListAsync();
-
-            var mappingsToRemove = existingMappings
-                .Where(x => !validLayerIds.Contains(x.LayerID))
-                .ToList();
-
-            if (mappingsToRemove.Count > 0)
-                _context.AnalyticalLayerPillarMappings.RemoveRange(mappingsToRemove);
-
-            var existingLayerIds = existingMappings.Select(x => x.LayerID).ToHashSet();
-            foreach (var layerId in validLayerIds.Where(id => !existingLayerIds.Contains(id)))
+            List<KpiPillarReplacementDto> kpiUpdates;
+            try
             {
-                _context.AnalyticalLayerPillarMappings.Add(new AnalyticalLayerPillarMapping
+                kpiUpdates = JsonSerializer.Deserialize<List<KpiPillarReplacementDto>>(
+                    kpiUpdatesJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                ) ?? new List<KpiPillarReplacementDto>();
+            }
+            catch (JsonException)
+            {
+                kpiUpdates = new List<KpiPillarReplacementDto>();
+            }
+
+            if (kpiUpdates.Count == 0)
+                return;
+
+            foreach (var update in kpiUpdates.Where(u => u.LayerID > 0 && pillarId > 0))
+            {
+                if (update.ReplacedPillarID > 0 && update.ReplacedPillarID != update.NewPillarID)
                 {
-                    LayerID = layerId,
-                    PillarID = pillarId,
-                    Category = string.Empty,
-                    CategoryNumber = 0
-                });
+                    var oldMapping = await _context.AnalyticalLayerPillarMappings
+                        .FirstOrDefaultAsync(x => x.LayerID == update.LayerID && x.PillarID == update.ReplacedPillarID);
+                    if (oldMapping != null)
+                        _context.AnalyticalLayerPillarMappings.Remove(oldMapping);
+                }
+
+                var existingNewMapping = await _context.AnalyticalLayerPillarMappings
+                    .FirstOrDefaultAsync(x => x.LayerID == update.LayerID && x.PillarID == pillarId);
+
+                if (existingNewMapping == null)
+                {
+                    _context.AnalyticalLayerPillarMappings.Add(new AnalyticalLayerPillarMapping
+                    {
+                        LayerID = update.LayerID,
+                        PillarID = pillarId,
+                        Category = null,
+                        CategoryNumber = update.CategoryNumber
+                    });
+                }
             }
         }
 
@@ -524,15 +531,14 @@ namespace AfricaMarketIntelligence.Services
         }
         public byte[] GeneratePdf(List<PillarWithQuestionsDto> data, Country country, int year)
         {
-            var logoPath = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "wwwroot/assets/images/ahi.png");
+            var logoPath = ReportThemeColors.LogoPath;
 
             return Document.Create(container =>
             {
                 container.Page(page =>
                 {
                     page.Margin(20);
+                    page.PageColor(ReportThemeColors.PageBg);
 
                     page.Content().Column(col =>
                     {
@@ -540,9 +546,8 @@ namespace AfricaMarketIntelligence.Services
 
                         foreach (var pillar in data)
                         {
-                            // ================= HEADER =================
                             col.Item()
-                                .Background("#1f4b3f")
+                                .Background(ReportThemeColors.DarkBg)
                                 .Padding(15)
                                 .Row(row =>
                                 {
@@ -551,28 +556,27 @@ namespace AfricaMarketIntelligence.Services
                                         left.Item().Text($"{pillarIndex}. {pillar.PillarName}")
                                             .FontSize(18)
                                             .Bold()
-                                            .FontColor("#ffffff");
+                                            .FontColor(ReportThemeColors.HeaderSubtitle);
 
-                                        left.Item().Text($"{country?.CountryName}, {country?.Continent}, USA | Data Year: {year}")
+                                        left.Item().Text($"{country?.CountryName}, {country?.Continent} | Data Year: {year}")
                                             .FontSize(10)
-                                            .FontColor("#cfe7df");
+                                            .FontColor(ReportThemeColors.Secondary);
 
                                         left.Item().Text($"Generated: {DateTime.Now:MMM dd, yyyy}")
                                             .FontSize(9)
-                                            .FontColor("#cfe7df");
+                                            .FontColor(ReportThemeColors.HeaderTextMuted);
                                     });
 
-                                    // Right logo
-                                    row.ConstantItem(80)
-                                       .Background("#ffffff")
+                                    row.ConstantItem(88)
                                         .AlignCenter()
                                         .AlignMiddle()
-                                        .Padding(4)
+                                        .Height(62)
                                         .Image(logoPath)
                                         .FitArea();
 
                                 });
 
+                            col.Item().Height(2).Background(ReportThemeColors.Primary);
                             col.Item().PaddingBottom(10);
 
                             int questionIndex = 1;
@@ -585,7 +589,7 @@ namespace AfricaMarketIntelligence.Services
                                 col.Item()
                                     .Background("#ffffff")
                                     .Border(1)
-                                    .BorderColor("#e5e5e5")
+                                    .BorderColor(ReportThemeColors.Border)
                                     .Padding(12)
                                     .Column(qCol =>
                                     {
@@ -624,14 +628,14 @@ namespace AfricaMarketIntelligence.Services
                                                          .OrderBy(x => x.UserID == -1 ? 1 : 0))
                                             {
                                                 bool isAI = user.UserID == -1;
-                                                string bgColor = isAI ? "#e6f4ef" : "#ffffff";
+                                                string bgColor = isAI ? ReportThemeColors.SuccessGreenBg : ReportThemeColors.White;
 
                                                 // NAME
                                                 var nameCell = table.Cell()
                                                     .Padding(8)
                                                     .Background(bgColor)
                                                     .Text(isAI ? "AI" : user.FullName)
-                                                    .FontColor(isAI ? "#0a7d5e" : "#000");
+                                                    .FontColor(isAI ? ReportThemeColors.HoverPrimary : ReportThemeColors.Text);
 
                                                 if (isAI)
                                                     nameCell.Bold();

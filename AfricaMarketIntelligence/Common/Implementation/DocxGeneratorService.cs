@@ -44,8 +44,8 @@ namespace AfricaMarketIntelligence.Common.Implementation
         private const int    ContentDxa      = (int)(PageWidthDxa - 2 * MarginDxa); // 10 466 DXA
         private const long   ContentWidthEmu = 6_645_000L;   // ≈ 7.27 inch in EMU
         private const long   HalfWidthEmu    = 3_220_000L;   // ≈ 3.52 inch in EMU
-        private const string DarkBlue       = ReportThemeColors.PrimaryHex;
-        private const string MedBlue        = ReportThemeColors.AccentGreenHex;
+        private const string DarkBlue       = ReportThemeColors.TextHex;
+        private const string MedBlue        = ReportThemeColors.PrimaryHex;
         private const string White           = ReportThemeColors.WhiteHex;
 
         // Unique image ID counter — reset per document
@@ -407,7 +407,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "FFFFFF" }));
 
             // ── Heading ──
-            cell.Append(CenteredBoldPara("Overall Country Score", "212529", "20"));
+            cell.Append(CenteredBoldPara("Overall Country Score", ReportThemeColors.PdfDarkGreenHex, "20"));
             // ── Ranking Labels ──
             var globalRankLabel = country.Rank.HasValue && country.TotalCountry.HasValue && country.TotalCountry >=1
                 ? $"Continent Rank: {country.Rank} / {country.TotalCountry}"
@@ -433,12 +433,12 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 cell.Append(
                     BuildDualBadgeRow(
                         $"▲ {Shorten(best.Name, 16)} ({best.Value:F0})",
-                        "E8F5E9",
-                        "003D44",
+                        ReportThemeColors.SuccessGreenBgHex,
+                        ReportThemeColors.PdfDarkGreenHex,
 
                         globalRankLabel,
-                        "F5F8F7",
-                        "003D44"
+                        ReportThemeColors.BackgroundHex,
+                        ReportThemeColors.PdfDarkGreenHex
                     ));
             }
 
@@ -450,12 +450,12 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 cell.Append(
                     BuildDualBadgeRow(
                         $"▼ {Shorten(worst.Name, 16)} ({worst.Value:F0})",
-                        "FDECEA",
-                        "B71C1C",
+                        ReportThemeColors.DangerRedBg.TrimStart('#'),
+                        ReportThemeColors.DangerRedDark.TrimStart('#'),
 
                         regionRankLabel,
-                        "FFF3E0",
-                        "5D3B00"
+                        ReportThemeColors.WarningOrangeBg.TrimStart('#'),
+                        ReportThemeColors.WarningOrangeText.TrimStart('#')
                     ));
             }
             return cell;
@@ -589,7 +589,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 new Shading { Val = ShadingPatternValues.Clear, Color = "auto", Fill = "FFFFFF" }));
 
             // ── Heading ──
-            cell.Append(CenteredBoldPara("Domain Performance Radar", "003D44", "20"));
+            cell.Append(CenteredBoldPara("Domain Performance Radar", ReportThemeColors.PdfDarkGreenHex, "20"));
 
             // ── Radar image ──
             cell.Append(EmbedImage(mainPart, radarPng, imgEmuW, imgEmuH));
@@ -613,12 +613,12 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     new Paragraph(new ParagraphProperties(
                             new Justification { Val = JustificationValues.Center }),
                         new Run(new RunProperties(
-                                new Bold(), new Color { Val = "4CAF50" }, new FontSize { Val = "36" }),
+                                new Bold(), new Color { Val = ReportThemeColors.AccentGreenHex }, new FontSize { Val = "36" }),
                             new Text(number))),
                     new Paragraph(new ParagraphProperties(
                             new Justification { Val = JustificationValues.Center }),
                         new Run(new RunProperties(
-                                new Color { Val = "4A5F62" }, new FontSize { Val = "16" }),
+                                new Color { Val = ReportThemeColors.LightTextHex }, new FontSize { Val = "16" }),
                             new Text(label))));
 
             return new Table(
@@ -630,7 +630,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                         new LeftBorder { Val = BorderValues.None },
                         new RightBorder { Val = BorderValues.None },
                         new InsideHorizontalBorder { Val = BorderValues.None },
-                        new InsideVerticalBorder { Val = BorderValues.Single, Color = "E4E4E4", Size = 4 })),
+                        new InsideVerticalBorder { Val = BorderValues.Single, Color = ReportThemeColors.BorderHex, Size = 4 })),
                 new TableRow(
                     CountCell(pillarCount.ToString(), "Domains"),
                     CountCell(kpiCount.ToString(), "KPIs")));
@@ -676,92 +676,57 @@ namespace AfricaMarketIntelligence.Common.Implementation
             body.AppendChild(CreateRankingHeader("Rankings"));
 
             body.AppendChild(CreateRankRow("Continent Rank",
-                data.Rank, data.TotalCountry, "16A34A"));
+                data.Rank, data.TotalCountry, ReportThemeColors.AccentGreenHex));
 
             body.AppendChild(CreateRankRow("Region Rank",
-                data.RegionRank, data.RegionTotalCountry, "006D77"));
+                data.RegionRank, data.RegionTotalCountry, ReportThemeColors.PrimaryHex));
 
             body.AppendChild(Gap(160));
 
             // =========================
             // EXECUTIVE SUMMARY
             // =========================
-            AppendContentSection(body, "Executive Summary", data.EvidenceSummary, "163329");
+            AppendContentSection(body, "Executive Summary", data.EvidenceSummary, ReportThemeColors.PdfDarkGreenHex);
 
             if (!isAllCountries)
             {
                 // =====================================================
                 // current situation
                 // =====================================================
-                AppendContentSection(body, "Key Findings", data.KeyFindings, "bbdefb");
-                AppendContentSection(body, "Recommendations", data.Recommendations, "b2dfdb");
-                AppendContentSection(body, "Key Developments", data.KeyDevelopments, "e6ccff");
-                AppendContentSection(body, "Critical Risks", data.CriticalRisks, "c2f0f0");
-                AppendContentSection(body, "Gaps", data.Gaps, "ffe6cc");
+                AppendContentSection(body, "Key Findings", data.KeyFindings, ReportThemeColors.AccentKeyFindings.TrimStart('#'));
+                AppendContentSection(body, "Recommendations", data.Recommendations, ReportThemeColors.AccentRecommendations.TrimStart('#'));
+                AppendContentSection(body, "Key Developments", data.KeyDevelopments, ReportThemeColors.AccentKeyDevelopments.TrimStart('#'));
+                AppendContentSection(body, "Critical Risks", data.CriticalRisks, ReportThemeColors.AccentCriticalRisks.TrimStart('#'));
+                AppendContentSection(body, "Gaps", data.Gaps, ReportThemeColors.AccentGaps.TrimStart('#'));
 
-                // =====================================================
-                // EVIDENCE SECTION
-                // =====================================================
-                AppendContentSection(body, "Structural Evidence", data.StructuralEvidence, "e6ccff");
-                AppendContentSection(body, "Operational Evidence", data.OperationalEvidence, "c2f0f0");
+                AppendContentSection(body, "Structural Evidence", data.StructuralEvidence, ReportThemeColors.AccentStructuralEvidence.TrimStart('#'));
+                AppendContentSection(body, "Operational Evidence", data.OperationalEvidence, ReportThemeColors.AccentOperationalEvidence.TrimStart('#'));
 
-                //body.AppendChild(PageBreak());
+                AppendContentSection(body, "Outcome Evidence", data.OutcomeEvidence, ReportThemeColors.AccentOutcomeEvidence.TrimStart('#'));
+                AppendContentSection(body, "Perception Evidence", data.PerceptionEvidence, ReportThemeColors.AccentPerceptionEvidence.TrimStart('#'));
 
-                AppendContentSection(body, "Outcome Evidence", data.OutcomeEvidence, "ffe6cc");
-                AppendContentSection(body, "Perception Evidence", data.PerceptionEvidence, "e6f7ff");
+                AppendContentSection(body, "Temporal Scope", data.TemporalScope, ReportThemeColors.AccentTemporalScope.TrimStart('#'));
+                AppendContentSection(body, "Distortion Screening", data.DistortionScreening, ReportThemeColors.AccentDistortionScreening.TrimStart('#'));
+                AppendContentSection(body, "Relational Integrity", data.RelationalIntegrity, ReportThemeColors.AccentRelationalIntegrity.TrimStart('#'));
 
-                // =====================================================
-                // INTEGRITY CHECKS
-                // =====================================================
-                //body.AppendChild(PageBreak());
+                AppendContentSection(body, "Political Shock", data.PoliticalShock, ReportThemeColors.AccentPoliticalShock.TrimStart('#'));
+                AppendContentSection(body, "Economic Shock", data.EconomicShock, ReportThemeColors.AccentEconomicShock.TrimStart('#'));
+                AppendContentSection(body, "Narrative Shock", data.NarrativeShock, ReportThemeColors.AccentNarrativeShock.TrimStart('#'));
 
-                AppendContentSection(body, "Temporal Scope", data.TemporalScope, "d9e6ff");
-                AppendContentSection(body, "Distortion Screening", data.DistortionScreening, "f2d9e6");
-                AppendContentSection(body, "Relational Integrity", data.RelationalIntegrity, "f0ffe6");
+                AppendContentSection(body, "Stress Score Adjustment", data.StressScoreAdjustment, ReportThemeColors.AccentStressAdjustment.TrimStart('#'));
 
-                // =====================================================
-                // STRESS TESTS
-                // =====================================================
-                //body.AppendChild(PageBreak());
+                AppendContentSection(body, "Inequality Adjustment", data.InequalityAdjustment, ReportThemeColors.AccentInequalityAdj.TrimStart('#'));
+                AppendContentSection(body, "Opacity Risk", data.OpacityRisk, ReportThemeColors.AccentOpacityRisk.TrimStart('#'));
+                AppendContentSection(body, "Non Compensation Note", data.NonCompensationNote, ReportThemeColors.AccentNonCompensation.TrimStart('#'));
 
-                AppendContentSection(body, "Political Shock", data.PoliticalShock, "ffd9cc");
-                AppendContentSection(body, "Economic Shock", data.EconomicShock, "fff2cc");
-                AppendContentSection(body, "Narrative Shock", data.NarrativeShock, "e6f2ff");
+                AppendContentSection(body, "Cross-Domain System Dynamics", data.CrossPillarPatterns, ReportThemeColors.AccentCrossPillar.TrimStart('#'));
+                AppendContentSection(body, "Institutional Capacity Assessment", data.InstitutionalCapacity, ReportThemeColors.AccentInstitutionalCapacity.TrimStart('#'));
 
-                //body.AppendChild(PageBreak());
+                AppendContentSection(body, "Equity Assessment", data.EquityAssessment, ReportThemeColors.AccentGaps.TrimStart('#'));
+                AppendContentSection(body, "Conflict Risk Outlook", data.ConflictRiskOutlook, ReportThemeColors.AccentConflictRisk.TrimStart('#'));
 
-                //AppendContentSection(body, "Overall Stress Resilience", data.OverallStressResilience, "e6ffe6");
-                AppendContentSection(body, "Stress Score Adjustment", data.StressScoreAdjustment, "ffe6f2");
-
-                // =====================================================
-                // GOVERNANCE ADJUSTMENTS
-                // =====================================================
-                //body.AppendChild(PageBreak());
-
-                AppendContentSection(body, "Inequality Adjustment", data.InequalityAdjustment, "f9e6ff");
-                AppendContentSection(body, "Opacity Risk", data.OpacityRisk, "fff0e6");
-                AppendContentSection(body, "Non Compensation Note", data.NonCompensationNote, "e6fff9");
-
-                // =====================================================
-                // SYSTEM ANALYSIS
-                // =====================================================
-                //body.AppendChild(PageBreak());
-
-                AppendContentSection(body, "Cross-Domain System Dynamics", data.CrossPillarPatterns, "6e9688");
-                AppendContentSection(body, "Institutional Capacity Assessment", data.InstitutionalCapacity, "0d8057");
-
-                //body.AppendChild(PageBreak());
-
-                AppendContentSection(body, "Equity Assessment", data.EquityAssessment, "e8f5e9");
-                AppendContentSection(body, "Conflict Risk Outlook", data.ConflictRiskOutlook, "fce4ec");
-
-                // =====================================================
-                // STRATEGIC OUTPUT
-                // =====================================================
-                //body.AppendChild(PageBreak());
-
-                AppendContentSection(body, "Strategic Policy Priorities", data.StrategicRecommendation, "2e9975");
-                AppendContentSection(body, "Why This Assessment Matters", data.DataTransparencyNote, "63a68f");
+                AppendContentSection(body, "Strategic Policy Priorities", data.StrategicRecommendation, ReportThemeColors.AccentStrategicPolicy.TrimStart('#'));
+                AppendContentSection(body, "Why This Assessment Matters", data.DataTransparencyNote, ReportThemeColors.AccentDataTransparency.TrimStart('#'));
             }            
         }
 
@@ -770,7 +735,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             return new Paragraph(
                 new ParagraphProperties(new SpacingBetweenLines { Before = "120" }),
                 new Run(
-                    new RunProperties(new Bold(), new Color { Val = "4A5F62" }, new FontSize { Val = "22" }),
+                    new RunProperties(new Bold(), new Color { Val = ReportThemeColors.LightTextHex }, new FontSize { Val = "22" }),
                     new Text(text)));
         }
         private static Table CreateRankRow(string label, int? rank, int? total, string color)
@@ -785,7 +750,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 new TableCellProperties(noBorder.CloneNode(true)),
                 new Paragraph(
                     new Run(
-                        new RunProperties(new Color { Val = "4A5F62" }, new FontSize { Val = "20" }),
+                        new RunProperties(new Color { Val = ReportThemeColors.LightTextHex }, new FontSize { Val = "20" }),
                         new Text(label))));
 
             var rightPara = new Paragraph(
@@ -796,7 +761,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 rightPara.Append(
                     new Run(new RunProperties(new Bold(), new Color { Val = color }),
                         new Text((rank ?? 0).ToString())),
-                    new Run(new RunProperties(new Color { Val = "4A5F62" }),
+                    new Run(new RunProperties(new Color { Val = ReportThemeColors.LightTextHex }),
                         new Text($" / {total}"))
                 );
             }
@@ -852,71 +817,41 @@ namespace AfricaMarketIntelligence.Common.Implementation
             // =========================
             // EVIDENCE SUMMARY
             // =========================
-            AppendContentSection(body, "Executive Summary", data.EvidenceSummary, "163329");
+            AppendContentSection(body, "Executive Summary", data.EvidenceSummary, ReportThemeColors.PdfDarkGreenHex);
 
             // =====================================================
             // EVIDENCE SECTION
             // =====================================================
-            AppendContentSection(body, "Structural Evidence", data.StructuralEvidence, "1f4e79");
-            AppendContentSection(body, "Operational Evidence", data.OperationalEvidence, "2e75b6");
+            AppendContentSection(body, "Structural Evidence", data.StructuralEvidence, ReportThemeColors.AccentKeyDevelopments.TrimStart('#'));
+            AppendContentSection(body, "Operational Evidence", data.OperationalEvidence, ReportThemeColors.AccentCriticalRisks.TrimStart('#'));
 
-            //body.AppendChild(PageBreak());
+            AppendContentSection(body, "Outcome Evidence", data.OutcomeEvidence, ReportThemeColors.AccentGaps.TrimStart('#'));
+            AppendContentSection(body, "Perception Evidence", data.PerceptionEvidence, ReportThemeColors.AccentPerceptionEvidenceAlt.TrimStart('#'));
 
-            AppendContentSection(body, "Outcome Evidence", data.OutcomeEvidence, "5b9bd5");
-            AppendContentSection(body, "Perception Evidence", data.PerceptionEvidence, "9dc3e6");
+            AppendContentSection(body, "Temporal Scope", data.TemporalScope, ReportThemeColors.AccentTemporalScopeAlt.TrimStart('#'));
+            AppendContentSection(body, "Distortion Screening", data.DistortionScreening, ReportThemeColors.AccentDistortionScreeningAlt.TrimStart('#'));
+            AppendContentSection(body, "Relational Integrity", data.RelationalIntegrity, ReportThemeColors.AccentRelationalIntegrityAlt.TrimStart('#'));
 
-            // =====================================================
-            // INTEGRITY CHECKS
-            // =====================================================
-            //body.AppendChild(PageBreak());
+            AppendContentSection(body, "Stress Political Shock", data.StressPoliticalShock, ReportThemeColors.AccentPoliticalShockAlt.TrimStart('#'));
+            AppendContentSection(body, "Stress Economic Shock", data.StressEconomicShock, ReportThemeColors.AccentEconomicShockAlt.TrimStart('#'));
+            AppendContentSection(body, "Stress Narrative Shock", data.StressNarrativeShock, ReportThemeColors.AccentNarrativeShockAlt.TrimStart('#'));
 
-            AppendContentSection(body, "Temporal Scope", data.TemporalScope, "5f497a");
-            AppendContentSection(body, "Distortion Screening", data.DistortionScreening, "8064a2");
-            AppendContentSection(body, "Relational Integrity", data.RelationalIntegrity, "b1a0c7");
+            AppendContentSection(body, "Stress Score Adjustment", data.StressScoreAdjustment, ReportThemeColors.AccentStressAdjustmentAlt.TrimStart('#'));
 
-            // =====================================================
-            // STRESS TEST
-            // =====================================================
-            //body.AppendChild(PageBreak());
+            AppendContentSection(body, "Inequality Adjustment", data.InequalityAdjustment, ReportThemeColors.AccentInequalityAdjAlt.TrimStart('#'));
+            AppendContentSection(body, "Opacity Risk", data.OpacityRisk, ReportThemeColors.AccentOpacityRiskAlt.TrimStart('#'));
+            AppendContentSection(body, "Non-Compensation Note", data.NonCompensationNote, ReportThemeColors.AccentNonCompensationAlt.TrimStart('#'));
 
-            AppendContentSection(body, "Stress Political Shock", data.StressPoliticalShock, "7f6000");
-            AppendContentSection(body, "Stress Economic Shock", data.StressEconomicShock, "bf9000");
-            AppendContentSection(body, "Stress Narrative Shock", data.StressNarrativeShock, "ffd966");
+            AppendContentSection(body, "Red Flags", data.RedFlag, ReportThemeColors.DangerRedFlag.TrimStart('#'), ReportThemeColors.DangerRedFlagAlt.TrimStart('#'));
+            AppendContentSection(body, "Geographic Equity Note", data.GeographicEquityNote, ReportThemeColors.AccentInstitutionalCapacity.TrimStart('#'));
 
-            //body.AppendChild(PageBreak());
-
-            //AppendContentSection(body, "Stress Overall Resilience", data.StressOverallResilience, "c55a11");
-            AppendContentSection(body, "Stress Score Adjustment", data.StressScoreAdjustment, "e26b0a");
-
-            // =====================================================
-            // GOVERNANCE ADJUSTMENTS
-            // =====================================================
-            //body.AppendChild(PageBreak());
-
-            AppendContentSection(body, "Inequality Adjustment", data.InequalityAdjustment, "274e13");
-            AppendContentSection(body, "Opacity Risk", data.OpacityRisk, "38761d");
-            AppendContentSection(body, "Non-Compensation Note", data.NonCompensationNote, "6aa84f");
-
-            // =====================================================
-            // ALERTS & EQUITY
-            // =====================================================
-            //body.AppendChild(PageBreak());
-
-            AppendContentSection(body, "Red Flags", data.RedFlag, "ED561A", "eb4634");
-            AppendContentSection(body, "Geographic Equity Note", data.GeographicEquityNote, "0d8057");
-
-            // =====================================================
-            // INSTITUTIONAL ANALYSIS
-            // =====================================================
-            //body.AppendChild(PageBreak());
-
-            AppendContentSection(body, "Institutional Assessment", data.InstitutionalAssessment, "2e9975");
+            AppendContentSection(body, "Institutional Assessment", data.InstitutionalAssessment, ReportThemeColors.AccentStrategicPolicy.TrimStart('#'));
 
             AppendContentSection(
                 body,
                 "Analytical Foundations and Data Integration",
                 data.DataGapAnalysis,
-                "a4bab2"
+                ReportThemeColors.AccentDataGap.TrimStart('#')
             );
 
             // =====================================================
@@ -935,17 +870,17 @@ namespace AfricaMarketIntelligence.Common.Implementation
 
         private void AppendDataSourcesSection(Body body, List<AIDataSourceCitation> sources)
         {
-            body.AppendChild(SectionHeading("Data Source Citations", "396154"));
+            body.AppendChild(SectionHeading("Data Source Citations", ReportThemeColors.PrimaryHex));
             foreach (var src in sources.Take(10))
             {
-                body.AppendChild(BoldParagraph(src.SourceName ?? "", "2C423B", 22));
+                body.AppendChild(BoldParagraph(src.SourceName ?? "", ReportThemeColors.TextHex, 22));
                 body.AppendChild(NormalParagraph(
                     $"Trust Level: {src.TrustLevel}/7  |  Year: {src.DataYear}  |  Type: {src.SourceType ?? "—"}",
-                    "4A5F62", 18));
+                    ReportThemeColors.LightTextHex, 18));
                 if (!string.IsNullOrEmpty(src.DataExtract))
-                    body.AppendChild(NormalParagraph(TruncateText(src.DataExtract, 200), "616161", 18, italic: true));
+                    body.AppendChild(NormalParagraph(TruncateText(src.DataExtract, 200), ReportThemeColors.Gray750.TrimStart('#'), 18, italic: true));
                 if (!string.IsNullOrEmpty(src.SourceURL))
-                    body.AppendChild(NormalParagraph(src.SourceURL, "305246", 16));
+                    body.AppendChild(NormalParagraph(src.SourceURL, ReportThemeColors.HoverPrimary.TrimStart('#'), 16));
                 body.AppendChild(Gap(120));
             }
         }
@@ -1062,15 +997,13 @@ namespace AfricaMarketIntelligence.Common.Implementation
 
             string title = string.IsNullOrEmpty(sectionTitle) ? data.CountryName : sectionTitle;
 
-            string logoPath = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "wwwroot/assets/images/ahi.png");
+            string logoPath = ReportThemeColors.LogoPath;
 
-            int logoColW = 2600;
+            int logoColW = 2000;
             int leftColW = ContentDxa - logoColW;
 
-            const long logoWidthEmu = 900_000L;
-            const long logoHeightEmu = 300_000L; // ✅ slightly increased
+            const long logoWidthEmu = 780_000L;
+            const long logoHeightEmu = 780_000L;
 
             // ✅ MAIN TABLE
             var layoutTable = new Table(
@@ -1085,7 +1018,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 new TableRowProperties(
                     new TableRowHeight
                     {
-                        Val = 900, // ✅ prevent compression
+                        Val = 1100,
                         HeightType = HeightRuleValues.AtLeast
                     }
                 )
@@ -1095,7 +1028,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             var leftCell = new TableCell(
                 new TableCellProperties(
                     new TableCellWidth { Width = leftColW.ToString(), Type = TableWidthUnitValues.Dxa },
-                    new Shading { Fill = ReportThemeColors.PrimaryHex },
+                    new Shading { Fill = ReportThemeColors.DarkBgHex },
                     new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Center },
                     new TableCellMargin(
                         new TopMargin { Width = "200", Type = TableWidthUnitValues.Dxa },
@@ -1107,9 +1040,9 @@ namespace AfricaMarketIntelligence.Common.Implementation
             );
 
             leftCell.Append(
-                HeaderParagraph(title, "42", "FFFFFF", true, "40"),
-                HeaderParagraph($"{data.CountryName}, {data.Continent} | Data Year: {data.Year}", "20", "B8E8EC", false, "20"),
-                HeaderParagraph($"Generated: {DateTime.Now:MMM dd, yyyy}", "16", ReportThemeColors.LightBgHex, false, "0")
+                HeaderParagraph(title, "42", ReportThemeColors.HeaderSubtitleHex, true, "40"),
+                HeaderParagraph($"{data.CountryName}, {data.Continent} | Data Year: {data.Year}", "20", ReportThemeColors.SecondaryHex, false, "20"),
+                HeaderParagraph($"Generated: {DateTime.Now:MMM dd, yyyy}", "16", ReportThemeColors.GraySilver.TrimStart('#'), false, "0")
             );
 
             mainRow.Append(leftCell);
@@ -1118,34 +1051,12 @@ namespace AfricaMarketIntelligence.Common.Implementation
             var rightCell = new TableCell(
                 new TableCellProperties(
                     new TableCellWidth { Width = logoColW.ToString(), Type = TableWidthUnitValues.Dxa },
-                    new Shading { Fill = ReportThemeColors.PrimaryHex },
+                    new Shading { Fill = ReportThemeColors.DarkBgHex },
                     new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Center },
                     new TableCellMargin(
-                        new TopMargin { Width = "200", Type = TableWidthUnitValues.Dxa },
-                        new BottomMargin { Width = "200", Type = TableWidthUnitValues.Dxa },
-                        new LeftMargin { Width = "200", Type = TableWidthUnitValues.Dxa },
-                        new RightMargin { Width = "200", Type = TableWidthUnitValues.Dxa }
-                    )
-                )
-            );
-
-            // ✅ INNER TABLE (WHITE BOX)
-            var innerTable = new Table(
-                new TableProperties(
-                    new TableWidth { Width = "5000", Type = TableWidthUnitValues.Pct }
-                )
-            );
-
-            var innerRow = new TableRow();
-
-            var innerCell = new TableCell(
-                new TableCellProperties(
-                    new Shading { Fill = "FFFFFF" },
-                    new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Center },
-                    new TableCellMargin(
-                        new TopMargin { Width = "120", Type = TableWidthUnitValues.Dxa },   // ✅ FIX
-                        new BottomMargin { Width = "120", Type = TableWidthUnitValues.Dxa },
-                        new LeftMargin { Width = "120", Type = TableWidthUnitValues.Dxa },
+                        new TopMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
+                        new BottomMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
+                        new LeftMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
                         new RightMargin { Width = "120", Type = TableWidthUnitValues.Dxa }
                     )
                 )
@@ -1161,40 +1072,35 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 );
 
                 logoPara.ParagraphProperties = new ParagraphProperties(
-                    new Justification { Val = JustificationValues.Center },
+                    new Justification { Val = JustificationValues.Right },
                     new SpacingBetweenLines
                     {
-                        Before = "0",   // ✅ REMOVE extra space
+                        Before = "0",
                         After = "0",
                         Line = "240",
                         LineRule = LineSpacingRuleValues.Auto
                     }
                 );
 
-                innerCell.Append(logoPara);
+                rightCell.Append(logoPara);
             }
             else
             {
-                innerCell.Append(new Paragraph());
+                rightCell.Append(new Paragraph());
             }
 
-            innerRow.Append(innerCell);
-            innerTable.Append(innerRow);
-
-            rightCell.Append(innerTable);
             mainRow.Append(rightCell);
 
             layoutTable.Append(mainRow);
 
-            // ✅ DIVIDER
             var divider = new Paragraph(
                 new ParagraphProperties(
                     new ParagraphBorders(
                         new BottomBorder
                         {
                             Val = BorderValues.Single,
-                            Size = 6,
-                            Color = "E4E4E4"
+                            Size = 12,
+                            Color = ReportThemeColors.PrimaryHex
                         }
                     )
                 )
@@ -1392,10 +1298,10 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 new TableProperties(
                     new TableWidth { Width = ContentDxa.ToString(), Type = TableWidthUnitValues.Dxa },
                     new TableBorders(
-                        new TopBorder { Val = BorderValues.Single, Color = "E4E4E4", Size = 6 },
-                        new BottomBorder { Val = BorderValues.Single, Color = "E4E4E4", Size = 6 },
-                        new LeftBorder { Val = BorderValues.Single, Color = "E4E4E4", Size = 6 },
-                        new RightBorder { Val = BorderValues.Single, Color = "E4E4E4", Size = 6 }
+                        new TopBorder { Val = BorderValues.Single, Color = ReportThemeColors.BorderHex, Size = 6 },
+                        new BottomBorder { Val = BorderValues.Single, Color = ReportThemeColors.BorderHex, Size = 6 },
+                        new LeftBorder { Val = BorderValues.Single, Color = ReportThemeColors.BorderHex, Size = 6 },
+                        new RightBorder { Val = BorderValues.Single, Color = ReportThemeColors.BorderHex, Size = 6 }
                     )
                 )
             );
@@ -1575,10 +1481,10 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     new TableWidth { Width = ContentDxa.ToString(), Type = TableWidthUnitValues.Dxa }
                 ),
                 new TableRow(
-                    Stat(green.ToString(), "Performing ≥70%", "E8F5E9", "2E7D32"),
-                    Stat(amber.ToString(), "Developing 40–69%", "FFF8E1", "E65100"),
-                    Stat(red.ToString(), "Needs Improvement < 40 %", "FDECEA", "C62828"),
-                    Stat(total.ToString(), "Total KPIs", "EEF5F1", "003D44")
+                    Stat(green.ToString(), "Performing ≥70%", ReportThemeColors.SuccessGreenBgHex, ReportThemeColors.AccentGreenHex),
+                    Stat(amber.ToString(), "Developing 40–69%", ReportThemeColors.WarningAmberBg.TrimStart('#'), ReportThemeColors.WarningOrangeDark.TrimStart('#')),
+                    Stat(red.ToString(), "Needs Improvement < 40 %", ReportThemeColors.DangerRedBg.TrimStart('#'), ReportThemeColors.DangerRed.TrimStart('#')),
+                    Stat(total.ToString(), "Total KPIs", ReportThemeColors.SurfaceGreenAlt.TrimStart('#'), ReportThemeColors.PdfDarkGreenHex)
                 )
             );
         }
@@ -1589,7 +1495,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             int total, int green, int amber, int red, float avg)
         {
             int cellW = ContentDxa / 5;
-            string avgColor = avg >= 70 ? "4CAF50" : avg >= 40 ? "FFC107" : "EF5350";
+            string avgColor = avg >= 70 ? ReportThemeColors.AccentGreenHex : avg >= 40 ? ReportThemeColors.PrimaryHex : ReportThemeColors.DangerRed.TrimStart('#');
 
             TableCell Pill(string val, string label, string fg)
             {
@@ -1597,7 +1503,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 return new TableCell(
                     new TableCellProperties(
                         new TableCellWidth { Width = cellW.ToString(), Type = TableWidthUnitValues.Dxa },
-                        new Shading { Val = ShadingPatternValues.Clear, Fill = "003D44" },
+                        new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.DarkBgHex },
                         new TableCellBorders(
                             new TopBorder    { Val = noBorder }, new BottomBorder { Val = noBorder },
                             new LeftBorder   { Val = noBorder }, new RightBorder  { Val = noBorder })),
@@ -1615,10 +1521,10 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 new TableProperties(
                     new TableWidth { Width = ContentDxa.ToString(), Type = TableWidthUnitValues.Dxa }),
                 new TableRow(
-                    Pill(total.ToString(),  "Total KPIs",        "4CAF50"),
-                    Pill(green.ToString(),  "Performing ≥70%",   "4CAF50"),
-                    Pill(amber.ToString(),  "Developing 40–69%", "FFC107"),
-                    Pill(red.ToString(), "Needs Improvement < 40 %", "EF5350"),
+                    Pill(total.ToString(),  "Total KPIs",        ReportThemeColors.AccentGreenHex),
+                    Pill(green.ToString(),  "Performing ≥70%",   ReportThemeColors.AccentGreenHex),
+                    Pill(amber.ToString(),  "Developing 40–69%", ReportThemeColors.PrimaryHex),
+                    Pill(red.ToString(), "Needs Improvement < 40 %", ReportThemeColors.DangerRed.TrimStart('#')),
                     Pill($"{avg:F1}%",      "Average Score",     avgColor)));
         }
 
@@ -1884,7 +1790,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                             },
                             new LeftBorder { Val = BorderValues.None },
                             new RightBorder { Val = BorderValues.None }),
-                        new Shading { Val = ShadingPatternValues.Clear, Fill = "F2F6F4" },
+                        new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.SurfaceGreenMintHex },
                         new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Center },
                         new TableCellMargin(
                             new LeftMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
@@ -1946,7 +1852,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 {
                     Val = bottomDivider ? BorderValues.Single : BorderValues.None,
                     Size = 2,
-                    Color = "E4E4E4"
+                    Color = ReportThemeColors.BorderHex
                 });
 
             var rp = new RunProperties(
@@ -2011,11 +1917,11 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     new TableWidth { Width = ContentDxa.ToString(), Type = TableWidthUnitValues.Dxa }),
                 new TableRow(
                     Cell(new[] { $"{avg:F1}", "Average Score" },
-                         new[] { GetBarColor(avg).TrimStart('#'), "A8E063" }, "003D44"),
+                         new[] { GetBarColor(avg).TrimStart('#'), ReportThemeColors.SecondaryHex }, ReportThemeColors.PdfDarkGreenHex),
                     Cell(new[] { $"▲ {Shorten(best.Name ?? "—", 22)}", $"{best.Value:F1}%" },
-                         new[] { "003D44", "2E7D32" }, "E8F5E9"),
+                         new[] { ReportThemeColors.PdfDarkGreenHex, ReportThemeColors.AccentGreenHex }, ReportThemeColors.SuccessGreenBgHex),
                     Cell(new[] { $"▼ {Shorten(worst.Name ?? "—", 22)}", $"{worst.Value:F1}%" },
-                         new[] { "B71C1C", "C62828" }, "FDECEA")));
+                         new[] { ReportThemeColors.DangerRedDark.TrimStart('#'), ReportThemeColors.DangerRed.TrimStart('#') }, ReportThemeColors.DangerRedBg.TrimStart('#'))));
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -2301,11 +2207,11 @@ namespace AfricaMarketIntelligence.Common.Implementation
         /// <summary>Green insight band matching the PDF DrawInsightBand strip.</summary>
         private static Paragraph CreateInsightBand(string text) =>
             new(new ParagraphProperties(
-                    new Shading { Val = ShadingPatternValues.Clear, Fill = "E8F5E9" },
+                    new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.SuccessGreenBgHex },
                     new SpacingBetweenLines { Before = "60", After = "80" }),
                 new Run(
                     new RunProperties(
-                        new Color { Val = "003D44" },
+                        new Color { Val = ReportThemeColors.PdfDarkGreenHex },
                         new FontSize { Val = "17" },
                         new RunFonts { Ascii = "Arial" }),
                     new Text(text) { Space = SpaceProcessingModeValues.Preserve }));
@@ -2344,20 +2250,20 @@ namespace AfricaMarketIntelligence.Common.Implementation
             row.AppendChild(new TableCell(
                 new TableCellProperties(
                     new TableCellWidth { Width = leftW.ToString(), Type = TableWidthUnitValues.Dxa },
-                    new Shading { Val = ShadingPatternValues.Clear, Fill = "003D44" },
+                    new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.PdfDarkGreenHex },
                     NoBorders()),
                 new Paragraph(
                     new ParagraphProperties(new SpacingBetweenLines { Before = "60", After = "20" }),
                     new Run(
                         new RunProperties(
-                            new Bold(), new Color { Val = "F0B429" },
+                            new Bold(), new Color { Val = ReportThemeColors.PrimaryHex },
                             new FontSize { Val = "64" }, new RunFonts { Ascii = "Arial" }),
                         new Text($"#{rank} of {total}"))),
                 new Paragraph(
                     new ParagraphProperties(new SpacingBetweenLines { Before = "0", After = "80" }),
                     new Run(
                         new RunProperties(
-                            new Color { Val = "A5D6C2" },
+                            new Color { Val = ReportThemeColors.SuccessGreenSoftHex },
                             new FontSize { Val = "22" }, new RunFonts { Ascii = "Arial" }),
                         new Text($"{countryDetails.CountryName}  ·  {countryDetails.Continent}")))));
 
@@ -2365,7 +2271,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             row.AppendChild(new TableCell(
                 new TableCellProperties(
                     new TableCellWidth { Width = "1900", Type = TableWidthUnitValues.Dxa },
-                    new Shading { Val = ShadingPatternValues.Clear, Fill = "003D44" },
+                    new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.PdfDarkGreenHex },
                     NoBorders()),
                 new Paragraph(
                     new ParagraphProperties(
@@ -2373,7 +2279,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                         new SpacingBetweenLines { Before = "60", After = "20" }),
                     new Run(
                         new RunProperties(
-                            new Color { Val = "A5A8AD" },
+                            new Color { Val = ReportThemeColors.GraySilver.TrimStart('#') },
                             new FontSize { Val = "18" }, new RunFonts { Ascii = "Arial" }),
                         new Text("Score"))),
                 new Paragraph(
@@ -2391,7 +2297,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                         new SpacingBetweenLines { Before = "0", After = "80" }),
                     new Run(
                         new RunProperties(
-                            new Color { Val = "4CAF8A" },
+                            new Color { Val = ReportThemeColors.PrimaryHex },
                             new FontSize { Val = "18" }, new RunFonts { Ascii = "Arial" }),
                         new Text($"Top {100 - pctile:F0}% of peers")))));
 
@@ -2440,7 +2346,14 @@ namespace AfricaMarketIntelligence.Common.Implementation
         private static Table CreateCountryLegendTable(
             List<PeerCountryHistoryReportDto> allCountries, AiCountrySummeryDto countryDetails)
         {
-            string[] palette = { "F0B429", "4CAF8A", "1E88E5", "FB8C00", "7B61FF", "E05252" };
+            string[] palette = {
+                ReportThemeColors.PrimaryHex,
+                ReportThemeColors.SecondaryHex,
+                ReportThemeColors.HoverPrimary.TrimStart('#'),
+                ReportThemeColors.GraySilver.TrimStart('#'),
+                ReportThemeColors.AccentGreenHex,
+                ReportThemeColors.DangerRed.TrimStart('#')
+            };
             var rows = new List<string[]>();
             for (int i = 0; i < allCountries.Count; i++)
             {
@@ -2461,7 +2374,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
         {
             var borderSingle = new EnumValue<BorderValues>(BorderValues.Single);
             TableCellBorders DataBorders() => new TableCellBorders(
-                new BottomBorder { Val = borderSingle, Size = 4, Color = "E4E4E4" });
+                new BottomBorder { Val = borderSingle, Size = 4, Color = ReportThemeColors.BorderHex });
 
             var table = new Table(new TableProperties(
                 new TableWidth { Width = colWidthsDxa.Sum().ToString(), Type = TableWidthUnitValues.Dxa }));
@@ -2473,7 +2386,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 hRow.AppendChild(new TableCell(
                     new TableCellProperties(
                         new TableCellWidth { Width = colWidthsDxa[c].ToString(), Type = TableWidthUnitValues.Dxa },
-                        new Shading { Val = ShadingPatternValues.Clear, Fill = "003D44" }),
+                        new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.PdfDarkGreenHex }),
                     new Paragraph(
                         new Run(new RunProperties(
                             new Bold(), new Color { Val = White }, new FontSize { Val = "16" }),
@@ -2496,7 +2409,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                             DataBorders()),
                         new Paragraph(
                             new Run(new RunProperties(
-                                new Color { Val = highlight ? "003D44" : "333333" },
+                                new Color { Val = highlight ? ReportThemeColors.PdfDarkGreenHex : "333333" },
                                 new FontSize { Val = "16" }),
                                 new Text(rows[r][c])))));
                 }
@@ -2519,7 +2432,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             TableCell HdrCell(string txt, bool first = false) =>
                 new(new TableCellProperties(
                     new TableCellWidth { Width = (first ? 1300 : yearW).ToString(), Type = TableWidthUnitValues.Dxa },
-                    new Shading { Val = ShadingPatternValues.Clear, Fill = "003D44" }),
+                    new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.PdfDarkGreenHex }),
                     new Paragraph(new Run(
                         new RunProperties(new Bold(), new Color { Val = White }, new FontSize { Val = "16" }),
                         new Text(txt))));
@@ -2555,7 +2468,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             DataRow("Score",
                 yr => { float s = (float)(mainHistory.FirstOrDefault(h => h.Year == yr)?.ScoreProgress ?? 0); return $"{s:F1}"; },
                 yr => { float s = (float)(mainHistory.FirstOrDefault(h => h.Year == yr)?.ScoreProgress ?? 0); return GetBarColor(s).TrimStart('#'); },
-                "F4F7F5");
+                ReportThemeColors.SurfaceGreenRowHex);
 
             DataRow("YoY Δ",
                 yr =>
@@ -2572,7 +2485,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     if (idx == 0) return "888888";
                     float prev = (float)(mainHistory.FirstOrDefault(h => h.Year == years[idx - 1])?.ScoreProgress ?? 0);
                     float curr = (float)(mainHistory.FirstOrDefault(h => h.Year == yr)?.ScoreProgress ?? 0);
-                    return curr >= prev ? "336B58" : "E05252";
+                    return curr >= prev ? ReportThemeColors.HoverPrimary.TrimStart('#') : ReportThemeColors.DangerRed.TrimStart('#');
                 },
                 "FFFFFF");
 
@@ -2587,9 +2500,9 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 {
                     float mine = (float)(mainHistory.FirstOrDefault(h => h.Year == yr)?.ScoreProgress ?? 0);
                     float peer = peerAvg.FirstOrDefault(p => p.Year == yr).Avg;
-                    return mine >= peer ? "336B58" : "E05252";
+                    return mine >= peer ? ReportThemeColors.HoverPrimary.TrimStart('#') : ReportThemeColors.DangerRed.TrimStart('#');
                 },
-                "F4F7F5");
+                ReportThemeColors.SurfaceGreenRowHex);
 
             return table;
         }
@@ -2610,7 +2523,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             hRow.AppendChild(new TableCell(
                 new TableCellProperties(
                     new TableCellWidth { Width = "1600", Type = TableWidthUnitValues.Dxa },
-                    new Shading { Val = ShadingPatternValues.Clear, Fill = "003D44" }),
+                    new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.PdfDarkGreenHex }),
                 new Paragraph(new Run(
                     new RunProperties(new Bold(), new Color { Val = White }, new FontSize { Val = "16" }),
                     new Text("Domain")))));
@@ -2618,7 +2531,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 hRow.AppendChild(new TableCell(
                     new TableCellProperties(
                         new TableCellWidth { Width = yearW.ToString(), Type = TableWidthUnitValues.Dxa },
-                        new Shading { Val = ShadingPatternValues.Clear, Fill = "003D44" }),
+                        new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.PdfDarkGreenHex }),
                     new Paragraph(
                         new ParagraphProperties(new Justification { Val = JustificationValues.Center }),
                         new Run(new RunProperties(new Bold(), new Color { Val = White }, new FontSize { Val = "14" }),
@@ -2628,14 +2541,14 @@ namespace AfricaMarketIntelligence.Common.Implementation
             // Data rows
             foreach (var (pillar, pi) in pillars.Select((p, i) => (p, i)))
             {
-                string rowBg = pi % 2 == 0 ? "F4F7F5" : "FFFFFF";
+                string rowBg = pi % 2 == 0 ? ReportThemeColors.SurfaceGreenRowHex : "FFFFFF";
                 var row = new TableRow();
                 row.AppendChild(new TableCell(
                     new TableCellProperties(
                         new TableCellWidth { Width = "1600", Type = TableWidthUnitValues.Dxa },
                         new Shading { Val = ShadingPatternValues.Clear, Fill = rowBg }),
                     new Paragraph(new Run(
-                        new RunProperties(new Bold(), new Color { Val = "003D44" }, new FontSize { Val = "14" }),
+                        new RunProperties(new Bold(), new Color { Val = ReportThemeColors.PdfDarkGreenHex }, new FontSize { Val = "14" }),
                         new Text(pillar.PillarName)))));
 
                 foreach (var yr in allYears)
@@ -2645,7 +2558,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     bool hasData = ps != null;
                     float score  = hasData ? (float)ps!.ScoreProgress : -1f;
                     string cellBg = !hasData ? "F0F0F0"
-                        : InterpolateColor("FFFFFF", "003D44", score / 100f).TrimStart('#');
+                        : InterpolateColor("FFFFFF", ReportThemeColors.PdfDarkGreenHex, score / 100f).TrimStart('#');
 
                     row.AppendChild(new TableCell(
                         new TableCellProperties(
@@ -2852,11 +2765,11 @@ namespace AfricaMarketIntelligence.Common.Implementation
 
         static string GetBarColor(float value)
         {
-            if (value >= 80) return "#C62828";
-            else if (value >= 60) return "#E65100";
-            else if (value >= 40) return "#FFC107";
-            else if (value >= 20) return ReportThemeColors.AccentGreen;
-            return ReportThemeColors.Primary;
+            if (value >= 80) return ReportThemeColors.SuccessGreen;
+            else if (value >= 60) return ReportThemeColors.BarGreenLow;
+            else if (value >= 40) return ReportThemeColors.WarningAmber;
+            else if (value >= 20) return ReportThemeColors.BarOrangeMid;
+            return ReportThemeColors.DangerRed;
         }
 
         private static string Shorten(string text, int max) =>
@@ -3095,17 +3008,17 @@ namespace AfricaMarketIntelligence.Common.Implementation
 
         //            // PPP column (col 4) — green if up, red if down
         //            if (colIdx == 4)
-        //                return ppp > nominal ? "E8F5E9" : ppp < nominal ? "FFEBEE" : null;
+        //                return ppp > nominal ? ReportThemeColors.SuccessGreenBgHex : ppp < nominal ? "FFEBEE" : null;
 
         //            // Diff column (col 5)
         //            if (colIdx == 5)
-        //                return ppp >= nominal ? "E8F5E9" : "FFEBEE";
+        //                return ppp >= nominal ? ReportThemeColors.SuccessGreenBgHex : "FFEBEE";
 
         //            // Signal column (col 6)
         //            if (colIdx == 6)
         //                return ratio switch
         //                {
-        //                    >= 2.0m => "E8F5E9",  // light green
+        //                    >= 2.0m => ReportThemeColors.SuccessGreenBgHex,  // light green
         //                    >= 1.3m => "E3F2FD",  // light blue
         //                    >= 0.9m => "F5F5F5",  // light grey
         //                    >= 0.7m => "FFF8E1",  // light amber
@@ -3159,12 +3072,12 @@ namespace AfricaMarketIntelligence.Common.Implementation
             // Table properties
             var tblPr = new TableProperties(
                 new TableBorders(
-                    new TopBorder { Val = BorderValues.Single, Size = 4, Color = "E4E4E4" },
-                    new BottomBorder { Val = BorderValues.Single, Size = 4, Color = "E4E4E4" },
-                    new LeftBorder { Val = BorderValues.Single, Size = 4, Color = "E4E4E4" },
-                    new RightBorder { Val = BorderValues.Single, Size = 4, Color = "E4E4E4" },
-                    new InsideHorizontalBorder { Val = BorderValues.Single, Size = 2, Color = "E4E4E4" },
-                    new InsideVerticalBorder { Val = BorderValues.Single, Size = 2, Color = "E4E4E4" }),
+                    new TopBorder { Val = BorderValues.Single, Size = 4, Color = ReportThemeColors.BorderHex },
+                    new BottomBorder { Val = BorderValues.Single, Size = 4, Color = ReportThemeColors.BorderHex },
+                    new LeftBorder { Val = BorderValues.Single, Size = 4, Color = ReportThemeColors.BorderHex },
+                    new RightBorder { Val = BorderValues.Single, Size = 4, Color = ReportThemeColors.BorderHex },
+                    new InsideHorizontalBorder { Val = BorderValues.Single, Size = 2, Color = ReportThemeColors.BorderHex },
+                    new InsideVerticalBorder { Val = BorderValues.Single, Size = 2, Color = ReportThemeColors.BorderHex }),
                 new TableWidth { Width = "5000", Type = TableWidthUnitValues.Pct });
             table.AppendChild(tblPr);
 
@@ -3184,7 +3097,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 var cell = new TableCell();
                 cell.AppendChild(new TableCellProperties(
                     new TableCellWidth { Width = widths[col].ToString(), Type = TableWidthUnitValues.Dxa },
-                    new Shading { Val = ShadingPatternValues.Clear, Fill = "003D44" }));
+                    new Shading { Val = ShadingPatternValues.Clear, Fill = ReportThemeColors.PdfDarkGreenHex }));
 
                 var p = new Paragraph();
                 var pp = new ParagraphProperties();
@@ -3235,7 +3148,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     var rPr = new RunProperties
                     {
                         FontSize = new FontSize { Val = "16" },  // 8pt
-                        Color = new Color { Val = fontColor ?? (isHighlight && col == 0 ? "003D44" : "333333") }
+                        Color = new Color { Val = fontColor ?? (isHighlight && col == 0 ? ReportThemeColors.PdfDarkGreenHex : "333333") }
                     };
                     if (isBold) rPr.AppendChild(new Bold());
                     run.AppendChild(rPr);

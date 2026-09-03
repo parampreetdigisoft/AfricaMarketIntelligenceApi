@@ -803,5 +803,39 @@ namespace AfricaMarketIntelligence.Services
 
             return Regex.Replace(input, "<.*?>", string.Empty).Trim();
         }
+
+        public async Task<ResultResponseDto<List<AnalyticalLayerPillarMappingDTO>>> GetKPIDetailsByLayerID(int layerID)
+        {
+            try
+            {
+                var layer = await _context.AnalyticalLayers.AsNoTracking().FirstOrDefaultAsync(x => !x.IsDeleted && x.LayerID == layerID);
+
+                if (layer == null)
+                {
+                    return ResultResponseDto<List<AnalyticalLayerPillarMappingDTO>>.Failure(new List<string> { "Layer not found" });
+                }
+
+                IQueryable<AnalyticalLayerPillarMapping> mappingQuery = _context.AnalyticalLayerPillarMappings.AsNoTracking().Where(m => m.LayerID == layerID);
+
+                var result = await mappingQuery
+                    .Join(_context.Pillars, mapping => mapping.PillarID, pillar => pillar.PillarID,
+                    (mapping, pillar) => new AnalyticalLayerPillarMappingDTO
+                    {
+                        AnalyticalLayerPillarMappingID = mapping.AnalyticalLayerPillarMappingID,
+                        LayerID = mapping.LayerID,
+                        PillarID = mapping.PillarID,
+                        Category = mapping.Category,
+                        CategoryNumber = mapping.CategoryNumber,
+                        PillarName = pillar.PillarName
+                    }).ToListAsync();
+
+                return ResultResponseDto<List<AnalyticalLayerPillarMappingDTO>>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                await _appLogger.LogAsync("Error occurred in GetKPIDetailsByLayerID", ex);
+                return ResultResponseDto<List<AnalyticalLayerPillarMappingDTO>>.Failure(new List<string> { "An error occurred" });
+            }
+        }
     }
 }

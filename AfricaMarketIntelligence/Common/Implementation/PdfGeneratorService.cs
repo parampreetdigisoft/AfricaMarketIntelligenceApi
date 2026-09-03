@@ -20,9 +20,12 @@ namespace AfricaMarketIntelligence.Common.Implementation
         #region constructor
 
         private readonly IAppLogger _appLogger;
-        public PdfGeneratorService(IAppLogger appLogger)
+        private readonly ICommonService _commonService;
+        private int _pillarCount;
+        public PdfGeneratorService(IAppLogger appLogger, ICommonService commonService)
         {
             _appLogger = appLogger;
+            _commonService = commonService;
         }
         #endregion
 
@@ -34,6 +37,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             try
             {
                 QuestPDF.Settings.EnableDebugging = true;
+                _pillarCount = (await _commonService.GetPillars()).Count;
                 var document = Document.Create(container =>
                 {
                     foreach(var countryDetails in countries)
@@ -64,6 +68,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             {
 
                 QuestPDF.Settings.EnableDebugging = true;
+                _pillarCount = (await _commonService.GetPillars()).Count;
                 var document = Document.Create(container =>
                 {
                     AddCountryDetailsPdf(container, countryDetails, pillars, kpis, peerCountry, userRole);
@@ -83,7 +88,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             try
             {
                 QuestPDF.Settings.EnableDebugging = true;
-
+                _pillarCount = (await _commonService.GetPillars()).Count;
                 var document = Document.Create(container =>
                 {
                     container.Page(page =>
@@ -211,7 +216,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
         {
             page.Size(PageSizes.A4);
             page.Margin(25);
-            page.PageColor(ReportThemeColors.White);
+            page.PageColor(ReportThemeColors.PageBg);
             page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial"));
         }
 
@@ -1596,15 +1601,12 @@ namespace AfricaMarketIntelligence.Common.Implementation
             UserRole userRole,
             string? pillarName)
         {
-            var logoPath = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "wwwroot/assets/images/ahi.png");
+            var logoPath = ReportThemeColors.LogoPath;
 
             container.Column(column =>
             {
-                column.Item().Background(ReportThemeColors.NavyBlue).Padding(8).Row(row =>
+                column.Item().Background(ReportThemeColors.DarkBg).Padding(10).Row(row =>
                 {
-                    // Left content
                     row.RelativeItem().Column(col =>
                     {
                         col.Spacing(2);
@@ -1614,43 +1616,37 @@ namespace AfricaMarketIntelligence.Common.Implementation
                         col.Item().Text(title)
                             .FontSize(21)
                             .Bold()
-                            .FontColor(ReportThemeColors.White);
+                            .FontColor(ReportThemeColors.HeaderSubtitle);
 
                         col.Item().Text($"{data.CountryName}, {data.Continent} | Data Year: {data.Year}")
                             .FontSize(10)
-                            .FontColor(ReportThemeColors.HeaderTextPale);
+                            .FontColor(ReportThemeColors.Secondary);
 
                         col.Item().Text($"Generated: {DateTime.Now:MMM dd, yyyy}")
                             .FontSize(8)
                             .FontColor(ReportThemeColors.HeaderTextMuted);
                     });
 
-                    // Right logo
-                    row.ConstantItem(80)
+                    row.ConstantItem(88)
                         .AlignRight()
                         .AlignMiddle()
-                        .Background(ReportThemeColors.White)
-                        .Padding(4)
+                        .Height(62)
                         .Image(logoPath)
                         .FitArea();
                 });
 
-                // Divider
-                column.Item().LineHorizontal(1).LineColor(ReportThemeColors.BorderDivider);
+                column.Item().Height(2).Background(ReportThemeColors.Primary);
             });
         }        
 
         void PillarComposeHeader(IContainer container, AiCountryPillarResponse data)
         {
-            var logoPath = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "wwwroot/assets/images/ahi.png");
+            var logoPath = ReportThemeColors.LogoPath;
 
             container.Column(column =>
             {
-                column.Item().Background(ReportThemeColors.NavyBlue).Padding(12).Row(row =>
+                column.Item().Background(ReportThemeColors.DarkBg).Padding(12).Row(row =>
                 {
-                    // Left content
                     row.RelativeItem().Column(col =>
                     {
                         col.Spacing(2);
@@ -1658,28 +1654,26 @@ namespace AfricaMarketIntelligence.Common.Implementation
                         col.Item().Text(data.PillarName)
                             .FontSize(21)
                             .Bold()
-                            .FontColor(ReportThemeColors.White);
+                            .FontColor(ReportThemeColors.HeaderSubtitle);
 
                         col.Item().Text($"{data.CountryName}, {data.Continent} | Data Year: {data.AIDataYear}")
                             .FontSize(10)
-                            .FontColor(ReportThemeColors.HeaderTextPale);
+                            .FontColor(ReportThemeColors.Secondary);
 
                         col.Item().Text($"Generated: {DateTime.Now:MMM dd, yyyy}")
                             .FontSize(8)
                             .FontColor(ReportThemeColors.HeaderTextMuted);
                     });
 
-                    // Logo
                     row.ConstantItem(90)
                         .AlignRight()
                         .AlignMiddle()
-                        .Background(ReportThemeColors.White)
-                        .Padding(1)
+                        .Height(64)
                         .Image(logoPath)
                         .FitArea();
                 });
 
-                column.Item().LineHorizontal(1).LineColor(ReportThemeColors.BorderDivider);
+                column.Item().Height(2).Background(ReportThemeColors.Primary);
             });
         }
 
@@ -1695,7 +1689,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                         text.Span(" of "); text.TotalPages();
                     });
                     col.Item().PaddingTop(5).AlignCenter()
-                        .Text("Country Assessment Platform").FontSize(8).FontColor(ReportThemeColors.Gray500);
+                        .Text("Africa Market Intelligence").FontSize(8).FontColor(ReportThemeColors.Gray500);
                 });
             });
         }
@@ -2986,6 +2980,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 .GroupBy(p => p.PillarID)
                 .Select(g => g.OrderBy(p => p.DisplayOrder).First())
                 .OrderBy(p => p.DisplayOrder)
+                .Take(_pillarCount)
                 .ToList();
 
             container.Padding(16).Column(col =>

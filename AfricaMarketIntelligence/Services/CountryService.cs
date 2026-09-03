@@ -655,7 +655,8 @@ namespace AfricaMarketIntelligence.Services
                 }
                 var year = DateTime.Now.Year;
                 Expression<Func<Assessment, bool>>  predicate = a => 
-                !a.UserCountryMapping.IsDeleted 
+                a.IsActive
+                && !a.UserCountryMapping.IsDeleted 
                 && a.UserCountryMapping.UserID == userId 
                 && a.UpdatedAt.Year == year
                 && (a.AssessmentPhase == AssessmentPhase.Completed || a.AssessmentPhase == AssessmentPhase.EditRejected || a.AssessmentPhase == AssessmentPhase.EditRequested);

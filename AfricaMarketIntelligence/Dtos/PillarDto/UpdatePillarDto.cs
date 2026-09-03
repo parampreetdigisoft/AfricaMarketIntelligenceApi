@@ -12,5 +12,6 @@ namespace AfricaMarketIntelligence.Dtos.PillarDto
         public IFormFile? ImageFile { get; set; }
         public string? KpiLayerIds { get; set; }
         public string? PillarCode { get; set; }
+        public string? KpiUpdates { get; set; }
     }
 }

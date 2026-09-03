@@ -23,18 +23,15 @@ namespace AfricaMarketIntelligence.Common.Implementation
         private readonly ApplicationDbContext _context;
         private readonly IAppLogger _appLogger;
         private readonly IWebHostEnvironment _env;
-        private readonly AppSettings _appSettings;
         public CommonService(
             ApplicationDbContext context,
             IAppLogger appLogger,
             IWebHostEnvironment env,
-            IOptions<AppSettings> appSettings,
             IMemoryCache memoryCache)
         {
             _context = context;
             _appLogger = appLogger;
             _env = env;
-            _appSettings = appSettings.Value;
             _memoryCache = memoryCache;
         }
 
