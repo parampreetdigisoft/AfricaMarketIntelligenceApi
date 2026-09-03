@@ -268,146 +268,66 @@ namespace AfricaMarketIntelligence.Services
                         .Select(x => x.UserCountryMappingID)
                         .ToListAsync();
                 }
-                var pillarCount = (await _commonService.GetPillars()).Count;
 
-                var baseRecords = await (
-                        from a in _context.Assessments
-                        where a.IsActive
-                              && a.UpdatedAt >= startDate
-                              && a.UpdatedAt < endDate
-                              && (!request.CountryID.HasValue || a.UserCountryMapping.CountryID == request.CountryID.Value)
-                              && (role == UserRole.Admin || allowedMappingIds.Contains(a.UserCountryMappingID))
+                var query =
+                    from a in _context.Assessments
+                    where a.IsActive
+                          && a.UpdatedAt >= startDate
+                          && a.UpdatedAt < endDate
+                          && (!request.CountryID.HasValue || a.UserCountryMapping.CountryID == request.CountryID.Value)
+                          && (role == UserRole.Admin || allowedMappingIds.Contains(a.UserCountryMappingID))
 
-                        join c in _context.Countries.Where(x => !x.IsDeleted)
-                            on a.UserCountryMapping.CountryID equals c.CountryID
+                    join c in _context.Countries.Where(x => !x.IsDeleted)
+                        on a.UserCountryMapping.CountryID equals c.CountryID
 
-                        join u in _context.Users.Where(x =>
-                                !x.IsDeleted &&
-                                (!request.Role.HasValue || x.Role == request.Role.Value))
-                            on a.UserCountryMapping.UserID equals u.UserID
+                    join u in _context.Users.Where(x =>
+                            !x.IsDeleted &&
+                            (!request.Role.HasValue || x.Role == request.Role.Value))
+                        on a.UserCountryMapping.UserID equals u.UserID
 
-                        join createdBy in _context.Users.Where(x => !x.IsDeleted)
-                            on a.UserCountryMapping.AssignedByUserId equals createdBy.UserID
+                    join createdBy in _context.Users.Where(x => !x.IsDeleted)
+                        on a.UserCountryMapping.AssignedByUserId equals createdBy.UserID
 
-                        select new
-                        {
-                            a.AssessmentID,
-                            a.UserCountryMappingID,
-                            a.CreatedAt,
-                            a.AssessmentPhase,
-                            c.CountryID,
-                            c.CountryName,
-                            c.Continent,
-                            u.UserID,
-                            u.FullName,
-                            AssignedByUser = createdBy.FullName,
-                            AssignedByUserId = createdBy.UserID
-                        })
-                    .ToListAsync();
+                    let responses = a.PillarAssessments.SelectMany(p => p.Responses)
 
-                if (baseRecords.Count == 0)
-                {
-                    return new PaginationResponse<GetCountryAssessmentResponseDto>
+                    select new GetCountryAssessmentResponseDto
                     {
-                        Data = new List<GetCountryAssessmentResponseDto>(),
-                        TotalRecords = 0,
-                        PageNumber = request.PageNumber,
-                        PageSize = request.PageSize
-                    };
-                }
+                        AssessmentID = a.AssessmentID,
+                        UserCountryMappingID = a.UserCountryMappingID,
+                        CreatedAt = a.CreatedAt,
 
-                var assessmentIds = baseRecords.Select(x => x.AssessmentID).ToList();
+                        CountryID = c.CountryID,
+                        CountryName = c.CountryName,
+                        Continent = c.Continent,
 
-                // ? Fetch responses grouped by PillarAssessmentID
-                var responsesByPillar = await (
-                        from r in _context.AssessmentResponses
-                        where assessmentIds.Contains(r.PillarAssessment.AssessmentID)
-                        select new
-                        {
-                            r.PillarAssessment.AssessmentID,
-                            r.PillarAssessment.PillarAssessmentID,
-                            r.Score,
-                            OptionText = r.Question.QuestionOptions
-                                .Where(o => o.OptionID == r.QuestionOptionID)
-                                .Select(o => o.OptionText)
-                                .FirstOrDefault()
-                        })
-                    .ToListAsync();
+                        UserID = u.UserID,
+                        UserName = u.FullName,
 
-                var results = baseRecords.Select(b =>
-                {
-                    var responses = responsesByPillar
-                        .Where(r => r.AssessmentID == b.AssessmentID)
-                        .ToList();
+                        Score = responses.Count(r => r.Score.HasValue && (int)r.Score.Value <= (int)ScoreValue.Four) > 0 ?
+                                (responses.Where(r => r.Score.HasValue && (int)r.Score.Value <= (int)ScoreValue.Four).Sum(r => (decimal)((int?)r.Score ?? 0)) * 100m)
+                                 /
+                                (responses.Count(r => r.Score.HasValue && (int)r.Score.Value <= (int)ScoreValue.Four) * 4m) : 0,
 
-                    // ? Only scored responses (0, 25, 50, 75, 100)
-                    var scoredResponses = responses
-                        .Where(r => r.Score.HasValue)
-                        .ToList();
+                        TotalNA = responses.Count(r =>
+                            !r.Score.HasValue &&
+                            r.Question.QuestionOptions.Any(o =>
+                                o.OptionID == r.QuestionOptionID &&
+                                o.OptionText == "N/A" || o.OptionText == "NA")),
 
-                    // ? NA and Unknown counts
-                    var totalNA = responses.Count(r =>
-                        !r.Score.HasValue &&
-                        (r.OptionText == "N/A" || r.OptionText == "NA"));
+                        TotalUnknown = responses.Count(r =>
+                            !r.Score.HasValue &&
+                            r.Question.QuestionOptions.Any(o =>
+                                o.OptionID == r.QuestionOptionID &&
+                                o.OptionText == "Unknown")),
 
-                    var totalUnknown = responses.Count(r =>
-                        !r.Score.HasValue &&
-                        r.OptionText == "Unknown");
+                        AssignedByUser = createdBy.FullName,
+                        AssignedByUserId = createdBy.UserID,
 
-                    // ? Step 1: Calculate per-pillar score
-                    // PillarScore = SUM(Score) / (TotalAnswered � 100) � 100
-                    var pillarScores = scoredResponses
-                        .GroupBy(r => r.PillarAssessmentID)
-                        .Select(g =>
-                        {
-                            var totalScore = g.Sum(r => (decimal)r.Score!.Value);
-                            var totalAns = g.Count();
-                            return totalAns > 0
-                                ? totalScore / (totalAns * 100m) * 100m
-                                : 0m;
-                        })
-                        .ToList();
-
-                    // ? Step 2: Overall Score = SUM(PillarScores) / TotalPillars(22)
-                    // Unanswered pillars = 0, correctly drag the overall score down
-                    var overallScore = pillarCount > 0
-                        ? Math.Round(pillarScores.Sum() / pillarCount, 2)
-                        : 0m;
-
-                    return new GetCountryAssessmentResponseDto
-                    {
-                        AssessmentID = b.AssessmentID,
-                        CountryID = b.CountryID,
-                        UserCountryMappingID = b.UserCountryMappingID,
-                        CreatedAt = b.CreatedAt,
-                        CountryName = b.CountryName ?? "",
-                        Continent = b.Continent ?? "",
-                        UserID = b.UserID,
-                        UserName = b.FullName ?? "",
-                        AssignedByUser = b.AssignedByUser ?? "",
-                        AssignedByUserId = b.AssignedByUserId,
-                        AssessmentPhase = b.AssessmentPhase,
                         AssessmentYear = year,
-                        Score = overallScore,
-                        TotalNA = totalNA,
-                        TotalUnknown = totalUnknown
+                        AssessmentPhase = a.AssessmentPhase
                     };
-                }).ToList();
 
-                var totalRecords = results.Count;
-                var data = results
-                    .OrderByDescending(x => x.Score)
-                    .Skip((request.PageNumber - 1) * request.PageSize)
-                    .Take(request.PageSize)
-                    .ToList();
-
-                return new PaginationResponse<GetCountryAssessmentResponseDto>
-                {
-                    Data = data,
-                    TotalRecords = totalRecords,
-                    PageNumber = request.PageNumber,
-                    PageSize = request.PageSize
-                };
+                return await query.ApplyPaginationAsync(request);
             }
             catch (Exception ex)
             {

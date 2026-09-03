@@ -64,7 +64,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             {
                 return await _context.CountryProgressResults
                  .FromSqlRaw(
-                     "EXEC usp_getCountriesProgressByUserId @userID, @role, @year", "@countryID",
+                     "EXEC usp_getCountriesProgressByUserId @userID, @role, @year, @countryID",
                      new SqlParameter("@userID", userId),
                      new SqlParameter("@role", role),
                      new SqlParameter("@year", year),
