@@ -738,7 +738,7 @@ namespace AfricaMarketIntelligence.Services
 
                         var richText = ws.Cell(row, c++).GetRichText();
 
-                        richText.AddText("Total Score:  ")
+                        richText.AddText("Average Score:  ")
                             .SetBold().SetFontColor(XLColor.DarkGray);
 
                         richText.AddText($"{Math.Round(score,2)}\n")

@@ -3,6 +3,7 @@ using AfricaMarketIntelligence.Common.Models;
 using AfricaMarketIntelligence.Common.Models.settings;
 using AfricaMarketIntelligence.Common.Models.views;
 using AfricaMarketIntelligence.Data;
+using AfricaMarketIntelligence.Dtos.AssessmentDto;
 using AfricaMarketIntelligence.Dtos.CountryDto;
 using AfricaMarketIntelligence.Dtos.PillarDto;
 using AfricaMarketIntelligence.IServices;
@@ -77,6 +78,26 @@ namespace AfricaMarketIntelligence.Common.Implementation
             {
                 await _appLogger.LogAsync("Error in Executing usp_getCountriesProgressByUserId", ex);
                 return new List<EvaluationCountryProgressResultDto>();
+            }
+        }
+
+        public async Task<List<GetAssessmentResponseDto>> GetUserDetailsAssignedToCountry(int year, int countryID = 0)
+        {
+            try
+            {
+                return await _context.GetAssessmentResponseDto
+                 .FromSqlRaw(
+                     "EXEC usp_GetUsersAssignedToCountry  @year, @countryID",
+                     new SqlParameter("@year", year),
+                     new SqlParameter("@countryID", countryID)
+                 )
+                 .AsNoTracking()
+                 .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                await _appLogger.LogAsync("Error in Executing usp_GetUsersAssignedToProgram", ex);
+                return new List<GetAssessmentResponseDto>();
             }
         }
 

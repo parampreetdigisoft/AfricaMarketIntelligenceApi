@@ -1817,7 +1817,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                         PillarContentSection(c, "Institutional Capacity Assessment", SanitizeText(data.InstitutionalCapacity), ReportThemeColors.DeepTeal));
 
                     column.Item().PaddingTop(8).Element(c =>
-                        PillarContentSection(c, "Equity Assessment", SanitizeText(data.EquityAssessment), ReportThemeColors.AccentEquityAssessment));
+                        PillarContentSection(c, "Equity Assessment", SanitizeText(data.EquityAssessment), ReportThemeColors.AccentGaps));
 
                     //column.Item().PageBreak();
                     column.Item().PaddingTop(8).Element(c =>

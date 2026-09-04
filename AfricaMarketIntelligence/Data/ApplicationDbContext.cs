@@ -1,10 +1,10 @@
-using AssessmentPlatform.Models;
-
-using Microsoft.EntityFrameworkCore;
 using AfricaMarketIntelligence.Common.Models;
+using AfricaMarketIntelligence.Common.Models.views;
+using AfricaMarketIntelligence.Dtos.AssessmentDto;
 using AfricaMarketIntelligence.Dtos.CountryDto;
 using AfricaMarketIntelligence.Models;
-using AfricaMarketIntelligence.Common.Models.views;
+using AssessmentPlatform.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace AfricaMarketIntelligence.Data
 {
@@ -33,6 +33,7 @@ namespace AfricaMarketIntelligence.Data
         public DbSet<AIEstimatedQuestionScore> AIEstimatedQuestionScores { get; set; } = default!;
         public DbSet<AIPillarScore> AIPillarScores { get; set; } = default!;
         public DbSet<AITrustLevel> AITrustLevels { get; set; } = default!;
+        public DbSet<GetAssessmentResponseDto> GetAssessmentResponseDto { get; set; }
         public DbSet<AnalyticalLayerPillarMapping> AnalyticalLayerPillarMappings { get; set; } = default!;
         public DbSet<EvaluationCountryProgressResultDto> CountryProgressResults { get; set; }
         public DbSet<CountryRankingResultDto> CountryRankingResults { get; set; }
@@ -162,6 +163,12 @@ namespace AfricaMarketIntelligence.Data
             {
                 entity.HasKey(e => e.ChatID);
                 entity.ToTable("AssistantChatHistory");
+            });
+
+            modelBuilder.Entity<GetAssessmentResponseDto>(eb =>
+            {
+                eb.HasNoKey();   // it's a projection, not a table row - no PK
+                eb.ToView(null); // not mapped to any table/view, only used via FromSqlRaw
             });
 
             modelBuilder.Entity<AIAssistantFAQ>(entity =>

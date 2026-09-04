@@ -1002,7 +1002,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
             int logoColW = 2000;
             int leftColW = ContentDxa - logoColW;
 
-            const long logoWidthEmu = 780_000L;
+            const long logoWidthEmu = 1_209_600L;
             const long logoHeightEmu = 780_000L;
 
             // ✅ MAIN TABLE

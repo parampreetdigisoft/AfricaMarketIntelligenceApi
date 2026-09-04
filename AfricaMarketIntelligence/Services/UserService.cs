@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using AfricaMarketIntelligence.Common.Implementation;
+using AfricaMarketIntelligence.Common.Interface;
 using AfricaMarketIntelligence.Common.Models;
 using AfricaMarketIntelligence.Data;
 using AfricaMarketIntelligence.Dtos.AssessmentDto;
@@ -9,6 +9,7 @@ using AfricaMarketIntelligence.Dtos.UserDtos;
 using AfricaMarketIntelligence.Enums;
 using AfricaMarketIntelligence.IServices;
 using AfricaMarketIntelligence.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace AfricaMarketIntelligence.Services
@@ -18,11 +19,13 @@ namespace AfricaMarketIntelligence.Services
         private readonly IAppLogger _appLogger;
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _env;
-        public UserService(ApplicationDbContext context, IAppLogger appLogger, IWebHostEnvironment env)
+        private readonly ICommonService _commonService;
+        public UserService(ApplicationDbContext context, IAppLogger appLogger, IWebHostEnvironment env, ICommonService commonService)
         {
             _context = context;
             _appLogger = appLogger;
             _env = env;
+            _commonService = commonService;
         }
         public User? GetByEmail(string email)
         {
@@ -189,51 +192,8 @@ namespace AfricaMarketIntelligence.Services
             try
             {
                 var year = DateTime.Now.Year;
-                var query =
-                from u in _context.Users
-                where !u.IsDeleted
-                join uc in _context.UserCountryMappings
-                        .Where(x => !x.IsDeleted && x.CountryID == countryId)
-                    on u.UserID equals uc.UserID
-                join c in _context.Countries.Where(x => !x.IsDeleted)
-                    on uc.CountryID equals c.CountryID
-                join createdBy in _context.Users.Where(x => !x.IsDeleted)
-                    on uc.AssignedByUserId equals createdBy.UserID into createdByUser
-                from createdBy in createdByUser.DefaultIfEmpty()
-
-                    // LEFT JOIN to Assessments
-                join a in _context.Assessments
-                        .Include(q => q.PillarAssessments)
-                            .ThenInclude(q => q.Responses).Where(x=>x.IsActive && x.CreatedAt.Year == year)
-                    on uc.UserCountryMappingID equals a.UserCountryMappingID into userAssessment
-                from a in userAssessment.DefaultIfEmpty()
-
-                select new GetAssessmentResponseDto
-                {
-                    AssessmentID = a != null ? a.AssessmentID : 0,
-                    UserCountryMappingID = uc.UserCountryMappingID,
-                    CreatedAt = a != null ? a.CreatedAt : null,
-                    CountryID = c.CountryID,
-                    CountryName = c.CountryName,
-                    Continent = c.Continent,
-                    UserID = u.UserID,
-                    UserName = u.FullName,
-                    Score = a != null
-                        ? a.PillarAssessments.SelectMany(x => x.Responses)
-                            .Where(r => r.Score.HasValue && (int)r.Score.Value <= (int)ScoreValue.Four)
-                            .Sum(r => (int?)r.Score ?? 0)
-                        : 0,
-                    AssignedByUser = createdBy != null ? createdBy.FullName : "",
-                    AssignedByUserId = createdBy != null ? createdBy.UserID : 0,
-                    AssessmentYear = a != null ? a.UpdatedAt.Year : 0,
-                    AssessmentPhase = a != null ? a.AssessmentPhase : null
-                };
-
-
-
-                var users = await query.Distinct().ToListAsync();
-
-                return ResultResponseDto<List<GetAssessmentResponseDto>>.Success(users, new[] { "user get successfully" });
+                var users = await _commonService.GetUserDetailsAssignedToCountry(year, countryId);
+                return ResultResponseDto<List<GetAssessmentResponseDto>>.Success(users, new[] { "User fetched successfully" });
             }
             catch (Exception ex)
             {
