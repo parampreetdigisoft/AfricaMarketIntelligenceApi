@@ -17,8 +17,6 @@ namespace AfricaMarketIntelligence.Common.Implementation
 {
     public class EmailService : IEmailService
     {
-        public const string LogoContentId = "ami-logo";
-
         private readonly Mailsetting _smtpSettings;
         private readonly IRazorViewEngine _razorViewEngine;
         private readonly ITempDataProvider _tempDataProvider;
@@ -45,43 +43,22 @@ namespace AfricaMarketIntelligence.Common.Implementation
             {
                 using var client = new SmtpClient(_smtpSettings.Host, _smtpSettings.Port)
                 {
-                    UseDefaultCredentials = false,
+                    UseDefaultCredentials=false,
                     Credentials = new NetworkCredential(_smtpSettings.Username, _smtpSettings.Password),
                     EnableSsl = _smtpSettings.EnableSsl,
                     DeliveryMethod = SmtpDeliveryMethod.Network,
-                    TargetName = "STARTTLS/" + _smtpSettings.Host
+                    TargetName = "STARTTLS/"+ _smtpSettings.Host
                 };
                 var htmlContent = await RenderRazorViewToStringAsync(viewNamePath, model);
-                using var mailMessage = new MailMessage
+                var mailMessage = new MailMessage
                 {
                     From = new MailAddress(_smtpSettings.SenderEmail, _smtpSettings.SenderName),
                     Subject = subject,
+                    Body = htmlContent,
                     IsBodyHtml = true
                 };
 
                 mailMessage.To.Add(toEmail);
-
-                var htmlView = AlternateView.CreateAlternateViewFromString(
-                    htmlContent,
-                    Encoding.UTF8,
-                    MediaTypeNames.Text.Html);
-
-                var webRoot = string.IsNullOrWhiteSpace(_env.WebRootPath)
-                    ? Path.Combine(_env.ContentRootPath, "wwwroot")
-                    : _env.WebRootPath;
-                var logoPath = Path.Combine(webRoot, "assets", "images", "Logo-market.png");
-
-                if (File.Exists(logoPath))
-                {
-                    var logo = new LinkedResource(logoPath, new ContentType("image/png"))
-                    {
-                        ContentId = LogoContentId,
-                        TransferEncoding = TransferEncoding.Base64
-                    };
-                    htmlView.LinkedResources.Add(logo);
-                }
-
-                mailMessage.AlternateViews.Add(htmlView);
 
                 await Task.Run(() => client.Send(mailMessage));
 

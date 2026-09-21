@@ -999,18 +999,30 @@ namespace AfricaMarketIntelligence.Common.Implementation
 
             string logoPath = ReportThemeColors.LogoPath;
 
-            int logoColW = 2000;
+            int logoColW = 2400;
             int leftColW = ContentDxa - logoColW;
 
-            const long logoWidthEmu = 1_209_600L;
-            const long logoHeightEmu = 780_000L;
+            const long logoHeightEmu = 817_200L;
+            const long logoWidthEmu = 1_180_800L;
 
             // ✅ MAIN TABLE
             var layoutTable = new Table(
                 new TableProperties(
-                    new TableWidth { Width = "5000", Type = TableWidthUnitValues.Pct },
+                    new TableWidth { Width = ContentDxa.ToString(), Type = TableWidthUnitValues.Dxa },
                     new TableLayout { Type = TableLayoutValues.Fixed },
-                    new TableCellSpacing() { Width = "0", Type = TableWidthUnitValues.Dxa }
+                    new TableCellSpacing { Width = "0", Type = TableWidthUnitValues.Dxa },
+                    new TableBorders(
+                        new TopBorder { Val = BorderValues.None },
+                        new BottomBorder { Val = BorderValues.None },
+                        new LeftBorder { Val = BorderValues.None },
+                        new RightBorder { Val = BorderValues.None },
+                        new InsideHorizontalBorder { Val = BorderValues.None },
+                        new InsideVerticalBorder { Val = BorderValues.None }
+                    )
+                ),
+                new TableGrid(
+                    new GridColumn { Width = leftColW.ToString() },
+                    new GridColumn { Width = logoColW.ToString() }
                 )
             );
 
@@ -1018,7 +1030,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 new TableRowProperties(
                     new TableRowHeight
                     {
-                        Val = 1100,
+                        Val = 1300,
                         HeightType = HeightRuleValues.AtLeast
                     }
                 )
@@ -1028,13 +1040,14 @@ namespace AfricaMarketIntelligence.Common.Implementation
             var leftCell = new TableCell(
                 new TableCellProperties(
                     new TableCellWidth { Width = leftColW.ToString(), Type = TableWidthUnitValues.Dxa },
+                    CellNoBorders(),
                     new Shading { Fill = ReportThemeColors.DarkBgHex },
                     new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Center },
                     new TableCellMargin(
                         new TopMargin { Width = "200", Type = TableWidthUnitValues.Dxa },
                         new BottomMargin { Width = "200", Type = TableWidthUnitValues.Dxa },
                         new LeftMargin { Width = "250", Type = TableWidthUnitValues.Dxa },
-                        new RightMargin { Width = "150", Type = TableWidthUnitValues.Dxa }
+                        new RightMargin { Width = "100", Type = TableWidthUnitValues.Dxa }
                     )
                 )
             );
@@ -1051,13 +1064,14 @@ namespace AfricaMarketIntelligence.Common.Implementation
             var rightCell = new TableCell(
                 new TableCellProperties(
                     new TableCellWidth { Width = logoColW.ToString(), Type = TableWidthUnitValues.Dxa },
+                    CellNoBorders(),
                     new Shading { Fill = ReportThemeColors.DarkBgHex },
                     new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Center },
                     new TableCellMargin(
-                        new TopMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
-                        new BottomMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
-                        new LeftMargin { Width = "80", Type = TableWidthUnitValues.Dxa },
-                        new RightMargin { Width = "120", Type = TableWidthUnitValues.Dxa }
+                        new TopMargin { Width = "200", Type = TableWidthUnitValues.Dxa },
+                        new BottomMargin { Width = "200", Type = TableWidthUnitValues.Dxa },
+                        new LeftMargin { Width = "100", Type = TableWidthUnitValues.Dxa },
+                        new RightMargin { Width = "250", Type = TableWidthUnitValues.Dxa }
                     )
                 )
             );
@@ -1093,20 +1107,54 @@ namespace AfricaMarketIntelligence.Common.Implementation
 
             layoutTable.Append(mainRow);
 
-            var divider = new Paragraph(
+            var headerSpacer = new Paragraph(
                 new ParagraphProperties(
-                    new ParagraphBorders(
-                        new BottomBorder
-                        {
-                            Val = BorderValues.Single,
-                            Size = 12,
-                            Color = ReportThemeColors.PrimaryHex
-                        }
+                    new SpacingBetweenLines { Before = "0", After = "80", Line = "80", LineRule = LineSpacingRuleValues.Exact }
+                )
+            );
+
+            // ✅ FULL-WIDTH GOLD UNDERLINE
+            var dividerTable = new Table(
+                new TableProperties(
+                    new TableWidth { Width = ContentDxa.ToString(), Type = TableWidthUnitValues.Dxa },
+                    new TableLayout { Type = TableLayoutValues.Fixed },
+                    new TableCellSpacing { Width = "0", Type = TableWidthUnitValues.Dxa },
+                    new TableBorders(
+                        new TopBorder { Val = BorderValues.None },
+                        new BottomBorder { Val = BorderValues.None },
+                        new LeftBorder { Val = BorderValues.None },
+                        new RightBorder { Val = BorderValues.None },
+                        new InsideHorizontalBorder { Val = BorderValues.None },
+                        new InsideVerticalBorder { Val = BorderValues.None }
+                    )
+                ),
+                new TableGrid(new GridColumn { Width = ContentDxa.ToString() }),
+                new TableRow(
+                    new TableRowProperties(
+                        new TableRowHeight { Val = 30, HeightType = HeightRuleValues.Exact }
+                    ),
+                    new TableCell(
+                        new TableCellProperties(
+                            new TableCellWidth { Width = ContentDxa.ToString(), Type = TableWidthUnitValues.Dxa },
+                            CellNoBorders(),
+                            new Shading { Fill = ReportThemeColors.PrimaryHex }
+                        ),
+                        new Paragraph(
+                            new ParagraphProperties(
+                                new SpacingBetweenLines { Before = "0", After = "0", Line = "20", LineRule = LineSpacingRuleValues.Exact }
+                            )
+                        )
                     )
                 )
             );
 
-            header.Append(layoutTable, divider);
+            var bottomSpacer = new Paragraph(
+                new ParagraphProperties(
+                    new SpacingBetweenLines { Before = "0", After = "120", Line = "120", LineRule = LineSpacingRuleValues.Exact }
+                )
+            );
+
+            header.Append(layoutTable, headerSpacer, dividerTable, bottomSpacer);
 
             headerPart.Header = header;
             header.Save();
@@ -1121,6 +1169,16 @@ namespace AfricaMarketIntelligence.Common.Implementation
         {
             var sp = new SectionProperties();
             sp.AppendChild(new SectionType { Val = SectionMarkValues.NextPage });
+            sp.AppendChild(new PageSize { Width = PageWidthDxa, Height = PageHeightDxa });
+            sp.AppendChild(new PageMargin
+            {
+                Top = MarginDxa,
+                Right = MarginDxa,
+                Bottom = MarginDxa,
+                Left = MarginDxa,
+                Header = 360,
+                Footer = 360
+            });
             sp.AppendChild(new HeaderReference { Type = HeaderFooterValues.Default, Id = headerRelId });
             sp.AppendChild(new HeaderReference { Type = HeaderFooterValues.First, Id = headerRelId });
             sp.AppendChild(new HeaderReference { Type = HeaderFooterValues.Even, Id = headerRelId });

@@ -1,4 +1,4 @@
-@model API.Views.EmailModels.UserEmailConfirmationRequestDto
+﻿@model API.Views.EmailModels.UserEmailConfirmationRequestDto
 @{
     Layout = null;
 }
@@ -35,7 +35,7 @@
 
                     <tr>
                         <td align="center" bgcolor="#0A0906" style="background-color:#0A0906;padding:36px 28px 28px;">
-                            <img src="cid:ami-logo"
+                            <img src="@($"{Model.ApiUrl}/assets/images/Logo-market-large.png")"
                                  alt="Africa Market Intelligence"
                                  width="200"
                                  style="display:block;width:200px;max-width:80%;height:auto;margin:0 auto 22px;border:0;" />
