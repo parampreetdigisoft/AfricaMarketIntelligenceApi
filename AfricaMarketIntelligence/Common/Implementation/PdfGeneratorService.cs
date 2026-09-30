@@ -191,7 +191,6 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 }
             }
 
-
             // -- Section 5 : KPI Dashboard ------------------------------------
             if (kpiChartItems.Any())
             {
@@ -202,6 +201,26 @@ namespace AfricaMarketIntelligence.Common.Implementation
                         CountryComposeHeader(x, countryDetails, userRole, "KPI Dashboard"));
                     page.Content().Element(content =>
                         KpiDashboardPage(content, kpiChartItems, isAllCountries));
+                    PageFooter(page);
+                });
+            }
+
+            if (!isAllCountries)
+            {
+                container.Page(page =>
+                {
+                    ApplyPageDefaults(page);
+                    page.Header().Element(x =>
+                        CountryComposeHeader(x, countryDetails, userRole, null));
+                    page.Content().Element(content =>
+                    {
+                        content.PaddingTop(4).Column(column =>
+                        {
+                            if (!string.IsNullOrEmpty(countryDetails.Recommendations))
+                                column.Item().PaddingTop(8).Element(c =>
+                                PillarContentSection(c, "Recommendations", SanitizeText(countryDetails.Recommendations), ReportThemeColors.AccentRecommendations));
+                        });
+                    });
                     PageFooter(page);
                 });
             }
@@ -1727,18 +1746,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     PillarContentSection(c, "Executive Summary", SanitizeText(data.EvidenceSummary), ReportThemeColors.AccentExecutiveSummary));
 
                 if (!isAllCountries)
-                {
-                    // =====================================================
-                    // Current situation
-                    // =====================================================
-                    if (!string.IsNullOrEmpty(data.KeyFindings))
-                        column.Item().PaddingTop(8).Element(c =>
-                        PillarContentSection(c, "Key Findings", SanitizeText(data.KeyFindings), ReportThemeColors.AccentKeyFindings));
-
-                    if (!string.IsNullOrEmpty(data.Recommendations))
-                        column.Item().PaddingTop(8).Element(c =>
-                        PillarContentSection(c, "Recommendations", SanitizeText(data.Recommendations), ReportThemeColors.AccentRecommendations));
-
+                {                   
                     if (!string.IsNullOrEmpty(data.InvestmentOpportunities))
                         column.Item().PaddingTop(8).Element(c =>
                         PillarContentSection(c, "Investment Opportunities", SanitizeText(data.InvestmentOpportunities), ReportThemeColors.AccentInvestmentOpportunities));
@@ -1752,9 +1760,6 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     if (!string.IsNullOrEmpty(data.Gaps))
                         column.Item().PaddingTop(8).Element(c =>
                         PillarContentSection(c, "Gaps", SanitizeText(data.Gaps), ReportThemeColors.AccentGaps));
-
-
-
 
 
                     // =====================================================
@@ -1838,6 +1843,9 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     column.Item().PaddingTop(8).Element(c =>
                         PillarContentSection(c, "Why This Assessment Matters", SanitizeText(data.DataTransparencyNote), ReportThemeColors.AccentDataTransparency));
 
+                    if (!string.IsNullOrEmpty(data.KeyFindings))
+                        column.Item().PaddingTop(8).Element(c =>
+                        PillarContentSection(c, "Key Findings", SanitizeText(data.KeyFindings), ReportThemeColors.AccentKeyFindings));
                 }
             });
         }

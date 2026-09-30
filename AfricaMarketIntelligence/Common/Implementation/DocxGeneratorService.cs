@@ -245,6 +245,11 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 AddKpiDashboardSection(body, mainPart, kpiChartItems, isAllCountries);
             }
 
+            if (!isAllCountries)
+            {
+                AppendContentSection(body, "Recommendations", countryDetails.Recommendations, ReportThemeColors.AccentRecommendations.TrimStart('#'));
+            }
+
             FinalizeLastSection(mainPart);
         }
 
@@ -693,8 +698,6 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 // =====================================================
                 // current situation
                 // =====================================================
-                AppendContentSection(body, "Key Findings", data.KeyFindings, ReportThemeColors.AccentKeyFindings.TrimStart('#'));
-                AppendContentSection(body, "Recommendations", data.Recommendations, ReportThemeColors.AccentRecommendations.TrimStart('#'));
                 AppendContentSection(body, "Investment Opportunities", data.InvestmentOpportunities, ReportThemeColors.AccentInvestmentOpportunities.TrimStart('#'));
                 AppendContentSection(body, "Key Developments", data.KeyDevelopments, ReportThemeColors.AccentKeyDevelopments.TrimStart('#'));
                 AppendContentSection(body, "Critical Risks", data.CriticalRisks, ReportThemeColors.AccentCriticalRisks.TrimStart('#'));
@@ -728,6 +731,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
 
                 AppendContentSection(body, "Strategic Policy Priorities", data.StrategicRecommendation, ReportThemeColors.AccentStrategicPolicy.TrimStart('#'));
                 AppendContentSection(body, "Why This Assessment Matters", data.DataTransparencyNote, ReportThemeColors.AccentDataTransparency.TrimStart('#'));
+                AppendContentSection(body, "Key Findings", data.KeyFindings, ReportThemeColors.AccentKeyFindings.TrimStart('#'));
             }            
         }
 
