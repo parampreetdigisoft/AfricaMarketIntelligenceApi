@@ -73,6 +73,7 @@ namespace AfricaMarketIntelligence.Services
                 AddChange(changes, nameof(entity.KeyDevelopments), entity.KeyDevelopments, dto.KeyDevelopments);
                 AddChange(changes, nameof(entity.CriticalRisks), entity.CriticalRisks, dto.CriticalRisks);
                 AddChange(changes, nameof(entity.Gaps), entity.Gaps, dto.Gaps);
+                AddChange(changes, nameof(entity.InvestmentOpportunities), entity.InvestmentOpportunities, dto.InvestmentOpportunities);
                 AddChange(changes, nameof(entity.KeyFindings), entity.KeyFindings, dto.KeyFindings);
                 AddChange(changes, nameof(entity.Recommendations), entity.Recommendations, dto.Recommendations);
                 AddChange(changes, nameof(entity.StructuralEvidence), entity.StructuralEvidence, dto.StructuralEvidence);
@@ -111,6 +112,7 @@ namespace AfricaMarketIntelligence.Services
                 entity.KeyDevelopments = dto.KeyDevelopments;
                 entity.CriticalRisks = dto.CriticalRisks;
                 entity.Gaps = dto.Gaps;
+                entity.InvestmentOpportunities = dto.InvestmentOpportunities;
                 entity.KeyFindings = dto.KeyFindings;
                 entity.Recommendations = dto.Recommendations;
                 entity.StructuralEvidence = dto.StructuralEvidence;

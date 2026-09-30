@@ -695,6 +695,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 // =====================================================
                 AppendContentSection(body, "Key Findings", data.KeyFindings, ReportThemeColors.AccentKeyFindings.TrimStart('#'));
                 AppendContentSection(body, "Recommendations", data.Recommendations, ReportThemeColors.AccentRecommendations.TrimStart('#'));
+                AppendContentSection(body, "Investment Opportunities", data.InvestmentOpportunities, ReportThemeColors.AccentInvestmentOpportunities.TrimStart('#'));
                 AppendContentSection(body, "Key Developments", data.KeyDevelopments, ReportThemeColors.AccentKeyDevelopments.TrimStart('#'));
                 AppendContentSection(body, "Critical Risks", data.CriticalRisks, ReportThemeColors.AccentCriticalRisks.TrimStart('#'));
                 AppendContentSection(body, "Gaps", data.Gaps, ReportThemeColors.AccentGaps.TrimStart('#'));

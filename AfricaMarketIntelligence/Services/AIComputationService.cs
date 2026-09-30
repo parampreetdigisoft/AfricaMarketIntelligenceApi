@@ -277,6 +277,7 @@ namespace AfricaMarketIntelligence.Services
                     KeyDevelopments = score != null ? score.KeyDevelopments : null,
                     CriticalRisks = score != null ? score.CriticalRisks : null,
                     Gaps = score != null ? score.Gaps : null,
+                    InvestmentOpportunities = score != null ? score.InvestmentOpportunities : null,
                     KeyFindings = score != null ? score.KeyFindings : null,
                     Recommendations = score != null ? score.Recommendations : null
                 };

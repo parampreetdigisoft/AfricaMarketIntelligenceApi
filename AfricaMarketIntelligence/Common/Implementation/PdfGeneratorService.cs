@@ -1314,7 +1314,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
                 col.Spacing(10);
 
                 // -- two-column layout: ring chart (left) + bar list (right) ------
-                col.Item().Height(500).Row(row =>
+                col.Item().Height(530).Row(row =>
                 {
                     // Left: radial ring chart
                     row.RelativeItem(5).Element(x => DrawPillarsRadialChart(x, data));
@@ -1738,6 +1738,10 @@ namespace AfricaMarketIntelligence.Common.Implementation
                     if (!string.IsNullOrEmpty(data.Recommendations))
                         column.Item().PaddingTop(8).Element(c =>
                         PillarContentSection(c, "Recommendations", SanitizeText(data.Recommendations), ReportThemeColors.AccentRecommendations));
+
+                    if (!string.IsNullOrEmpty(data.InvestmentOpportunities))
+                        column.Item().PaddingTop(8).Element(c =>
+                        PillarContentSection(c, "Investment Opportunities", SanitizeText(data.InvestmentOpportunities), ReportThemeColors.AccentInvestmentOpportunities));
 
                     if (!string.IsNullOrEmpty(data.KeyDevelopments))
                         column.Item().PaddingTop(8).Element(c =>

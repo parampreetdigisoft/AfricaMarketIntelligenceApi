@@ -168,6 +168,7 @@ namespace AfricaMarketIntelligence.Common.Implementation
         public const string AccentGaps = "#B7A25A";
         public const string AccentKeyFindings = "#5C4A1A";
         public const string AccentRecommendations = "#8A5A2B";
+        public const string AccentInvestmentOpportunities = "#5C4A1A";
         public const string AccentStructuralEvidence = "#C9A24A";
         public const string AccentOperationalEvidence = "#8A5A2B";
         public const string AccentOutcomeEvidence = "#B7A25A";
